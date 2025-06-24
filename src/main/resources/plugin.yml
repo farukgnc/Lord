@@ -1,0 +1,7 @@
+name: Lord
+version: '${project.version}'
+main: com.lord.Lord
+# API sürümünü 1.21 olarak güncelledik
+api-version: '1.21'
+authors: [Opsion, Brav3]
+description: Lord Core Plugin
