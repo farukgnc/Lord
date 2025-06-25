@@ -1,7 +1,7 @@
 package com.lord.menu;
 
 import com.lord.Lord;
-import com.lord.menu.buttons.MenuButton;
+import com.lord.menu.components.UIComponent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -17,13 +17,17 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class MenuManager implements Listener {
 
-    private final Map<UUID, Menu> openMenus = new ConcurrentHashMap<>();
+    private final Map<UUID, MenuView> openMenus = new ConcurrentHashMap<>();
 
     public MenuManager(Lord plugin) {
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
-    public void openMenu(Player player, Menu menu) {
+    public void open(Player player, MenuView menu) {
+        // Menüye, onu kimin açtığını ve yöneticisinin kim olduğunu bildiriyoruz.
+        menu.setViewer(player);
+        menu.setMenuManager(this);
+
         int size = menu.getRows() * 9;
         Inventory inventory = Bukkit.createInventory(
                 player,
@@ -31,41 +35,48 @@ public final class MenuManager implements Listener {
                 MiniMessage.miniMessage().deserialize(menu.getTitle())
         );
 
-        Map<Integer, MenuButton> buttons = menu.getButtons(player);
-        for (Map.Entry<Integer, MenuButton> entry : buttons.entrySet()) {
-            inventory.setItem(entry.getKey(), entry.getValue().getItem());
-        }
+        render(player, menu, inventory);
 
         this.openMenus.put(player.getUniqueId(), menu);
         player.openInventory(inventory);
     }
 
+    public void update(Player player) {
+        MenuView openMenu = this.openMenus.get(player.getUniqueId());
+        if (openMenu != null && player.getOpenInventory().getTopInventory() != null) {
+            render(player, openMenu, player.getOpenInventory().getTopInventory());
+            player.updateInventory();
+        }
+    }
+
+    private void render(Player player, MenuView menu, Inventory inventory) {
+        inventory.clear();
+        Map<Integer, UIComponent> components = menu.compose(player);
+        for (Map.Entry<Integer, UIComponent> entry : components.entrySet()) {
+            inventory.setItem(entry.getKey(), entry.getValue().render(player));
+        }
+    }
+
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         Player player = (Player) event.getWhoClicked();
-        Menu openMenu = this.openMenus.get(player.getUniqueId());
+        MenuView openMenu = this.openMenus.get(player.getUniqueId());
 
-        if (openMenu == null) {
+        if (openMenu == null || event.getClickedInventory() == null || !event.getClickedInventory().equals(player.getOpenInventory().getTopInventory())) {
             return;
         }
 
         event.setCancelled(true);
 
-        if (event.getClickedInventory() == null || event.getClickedInventory().equals(player.getOpenInventory().getBottomInventory())) {
-            return;
-        }
+        UIComponent clickedComponent = openMenu.compose(player).get(event.getSlot());
 
-        Map<Integer, MenuButton> buttons = openMenu.getButtons(player);
-        MenuButton clickedButton = buttons.get(event.getSlot());
-
-        if (clickedButton != null) {
-            clickedButton.getClickAction().accept(event);
+        if (clickedComponent != null) {
+            clickedComponent.getAction().accept(event);
         }
     }
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
-        Player player = (Player) event.getPlayer();
-        this.openMenus.remove(player.getUniqueId());
+        this.openMenus.remove(event.getPlayer().getUniqueId());
     }
 }

@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
         name = "grant",
         permission = "lord.command.grant",
         description = "Assigns a rank to a player.",
-        usage = "/grant <player> <rank> [duration] [reason...]"
+        usage = "/grant <player> <rank> [duration]"
 )
 public final class GrantCommand implements ICommand {
 
@@ -45,7 +45,7 @@ public final class GrantCommand implements ICommand {
         CommandSender sender = context.sender();
 
         if (context.length() < 2) {
-            sender.sendMessage(Component.text("Usage: /grant <player> <rank> [duration] [reason...]", NamedTextColor.RED));
+            sender.sendMessage(Component.text("Usage: /grant <player> <rank> [duration]", NamedTextColor.RED));
             return;
         }
 
@@ -74,9 +74,6 @@ public final class GrantCommand implements ICommand {
         }
 
         Duration duration = TimeUtil.parseDuration(context.arg(2));
-        String reason = context.length() > 3 ?
-                Arrays.stream(context.args(), 3, context.args().length).collect(Collectors.joining(" ")) :
-                "No reason specified.";
 
         UUID issuerUuid = (sender instanceof Player player) ? player.getUniqueId() : null;
 

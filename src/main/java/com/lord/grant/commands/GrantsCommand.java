@@ -53,6 +53,6 @@ public final class GrantsCommand implements ICommand {
         }
 
         // Yeni menü nesnesini oluştur ve oyuncuya aç.
-        this.menuManager.openMenu(player, new GrantsMenu(target, this.registry));
+        this.menuManager.open(player, new GrantsMenu(target, this.registry));
     }
 }
