@@ -3,7 +3,7 @@ package com.lord.grant.commands;
 import com.lord.command.CommandContext;
 import com.lord.command.ICommand;
 import com.lord.command.annotations.Command;
-import com.lord.grant.menus.wizards.GrantWizard;
+import com.lord.grant.menus.GrantWizard;
 import com.lord.services.ServiceRegistry;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;

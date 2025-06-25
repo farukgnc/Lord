@@ -1,6 +1,5 @@
 package com.lord.grant.menus;
 
-import com.lord.grant.menus.wizards.GrantWizard;
 import com.lord.menu.MenuView;
 import com.lord.menu.components.UIComponent;
 import com.lord.menu.utils.ButtonBuilder;

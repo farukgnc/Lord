@@ -1,9 +1,7 @@
-package com.lord.rank.menus.wizards;
+package com.lord.rank.menus.creation;
 
 import com.lord.menu.MenuManager;
 import com.lord.rank.Rank;
-import com.lord.rank.menus.ParentSelectionMenu;
-import com.lord.rank.menus.RankConfirmationMenu;
 import com.lord.rank.repositories.RankRepository;
 import com.lord.services.ChatInputManager;
 import com.lord.services.ServiceRegistry;
@@ -28,6 +26,7 @@ public final class RankCreationWizard {
     private final Player issuer;
     private final ChatInputManager chatInputManager;
 
+    // Data collected throughout the wizard
     private String name;
     private int priority;
     private String prefix;
@@ -40,10 +39,16 @@ public final class RankCreationWizard {
         this.chatInputManager = registry.get(ChatInputManager.class);
     }
 
+    /**
+     * Starts the wizard by prompting for the rank name.
+     */
     public void start() {
         promptForName();
     }
 
+    /**
+     * Step 1: Prompts the user to enter the rank name in chat.
+     */
     private void promptForName() {
         issuer.closeInventory();
         issuer.sendMessage(MiniMessage.miniMessage().deserialize(
@@ -64,6 +69,9 @@ public final class RankCreationWizard {
         });
     }
 
+    /**
+     * Step 2: Prompts the user to enter the rank priority.
+     */
     private void promptForPriority() {
         Component message = MiniMessage.miniMessage().deserialize(
                 "\n<green>Please type the priority for the rank '<white><rank></white>'.\n<gray>(Higher number = higher priority)\n",
@@ -90,69 +98,29 @@ public final class RankCreationWizard {
         });
     }
 
+    /**
+     * Step 3: Prompts the user to enter the rank prefix.
+     */
     private void promptForPrefix() {
         promptForText("prefix",
-                input -> this.prefix = input, // Sonucu ne yapacağı
-                this::promptForSuffix         // Bir sonraki adım
+                input -> this.prefix = input,
+                this::promptForSuffix
         );
     }
 
+    /**
+     * Step 4: Prompts the user to enter the rank suffix.
+     */
     private void promptForSuffix() {
         promptForText("suffix",
-                input -> this.suffix = input, // Sonucu ne yapacağı
-                this::promptForParents        // Bir sonraki adım
+                input -> this.suffix = input,
+                this::promptForParents
         );
     }
 
-    private void promptForText(String property, Consumer<String> onResult, Runnable nextStep) {
-        // Renk listesini dinamik olarak oluştur
-        String colorList = NamedTextColor.NAMES.keys().stream()
-                .sorted()
-                .map(name -> "<" + name + ">" + name)
-                .collect(Collectors.joining("<gray>, </gray>"));
-        Component hoverText = MiniMessage.miniMessage().deserialize("<gold>Available Colors:</gold>\n" + colorList);
-
-        // Mesajı oluştur
-        Component message = Component.text()
-                .append(Component.newline())
-                .append(MiniMessage.miniMessage().deserialize("<green>Please type the <property> for the rank '<white>" + this.name + "</white>'.", Placeholder.unparsed("property", property)))
-                .append(Component.newline())
-                .append(MiniMessage.miniMessage().deserialize("<gray>You can use "))
-                .append(Component.text("color tags", NamedTextColor.AQUA, TextDecoration.UNDERLINED)
-                        .hoverEvent(HoverEvent.showText(hoverText)))
-                .append(MiniMessage.miniMessage().deserialize(" <gray>for colors. Type <white>'none'</white> to skip.\n"))
-                .build();
-
-        issuer.sendMessage(message);
-
-        // Kullanıcıdan girdi iste
-        this.chatInputManager.prompt(issuer, input -> {
-            if (input.equalsIgnoreCase("cancel")) {
-                issuer.sendMessage(Component.text("Creation cancelled.", NamedTextColor.YELLOW));
-                return;
-            }
-            if (!input.equalsIgnoreCase("none")) {
-                onResult.accept(input); // Gelen eylemi çalıştır (prefix veya suffix'i ayarla)
-
-                issuer.sendMessage(MiniMessage.miniMessage().deserialize(
-                        "<dark_green>»</dark_green> <gray>"+ capitalize(property) +" set to: <reset><value>",
-                        Placeholder.component("value", MiniMessage.miniMessage().deserialize(input))
-                ));
-            } else {
-                onResult.accept(null); // 'none' girildiyse null olarak ayarla
-                issuer.sendMessage(MiniMessage.miniMessage().deserialize("<dark_green>»</dark_green> <gray>No " + property + " was set."));
-            }
-
-            // Her durumda, bir sonraki adıma geç
-            nextStep.run();
-        });
-    }
-
-    private String capitalize(String str) {
-        if (str == null || str.isEmpty()) return str;
-        return str.substring(0, 1).toUpperCase() + str.substring(1);
-    }
-
+    /**
+     * Step 5: Opens the parent selection menu.
+     */
     private void promptForParents() {
         issuer.sendMessage(MiniMessage.miniMessage().deserialize(
                 "\n<green>Now, please select the parent rank(s) from the menu.\n"
@@ -160,10 +128,18 @@ public final class RankCreationWizard {
         registry.get(MenuManager.class).open(issuer, new ParentSelectionMenu(this));
     }
 
+    /**
+     * Step 6: Advances the wizard to the final confirmation menu.
+     * This is called by the "Done" button in the ParentSelectionMenu.
+     */
     public void advanceToConfirmation() {
         registry.get(MenuManager.class).open(issuer, new RankConfirmationMenu(this));
     }
 
+    /**
+     * Final Step: Creates the rank with all the collected data.
+     * This is called by the "Confirm" button in the RankConfirmationMenu.
+     */
     public void createRank() {
         RankRepository rankRepository = registry.get(RankRepository.class);
 
@@ -183,5 +159,54 @@ public final class RankCreationWizard {
                 "<dark_green>»</dark_green> <green>Rank <white><rank_name></white> has been created successfully!",
                 Placeholder.unparsed("rank_name", this.name)
         ));
+    }
+
+    /**
+     * A helper method to reduce code duplication for prompting text input (prefix/suffix).
+     */
+    private void promptForText(String property, Consumer<String> onResult, Runnable nextStep) {
+        String colorList = NamedTextColor.NAMES.keys().stream()
+                .sorted()
+                .map(name -> "<" + name + ">" + name)
+                .collect(Collectors.joining("<gray>, </gray>"));
+        Component hoverText = MiniMessage.miniMessage().deserialize("<gold>Available Colors:</gold>\n" + colorList);
+
+        Component message = Component.text()
+                .append(Component.newline())
+                .append(MiniMessage.miniMessage().deserialize("<green>Please type the <property> for the rank '<white>" + this.name + "</white>'.", Placeholder.unparsed("property", property)))
+                .append(Component.newline())
+                .append(MiniMessage.miniMessage().deserialize("<gray>You can use "))
+                .append(Component.text("color tags", NamedTextColor.AQUA, TextDecoration.UNDERLINED)
+                        .hoverEvent(HoverEvent.showText(hoverText)))
+                .append(MiniMessage.miniMessage().deserialize(" <gray>for colors. Type <white>'none'</white> to skip.\n"))
+                .build();
+
+        issuer.sendMessage(message);
+
+        this.chatInputManager.prompt(issuer, input -> {
+            if (input.equalsIgnoreCase("cancel")) {
+                issuer.sendMessage(Component.text("Creation cancelled.", NamedTextColor.YELLOW));
+                return;
+            }
+
+            String result = input.equalsIgnoreCase("none") ? null : input;
+            onResult.accept(result);
+
+            if (result != null) {
+                issuer.sendMessage(MiniMessage.miniMessage().deserialize(
+                        "<dark_green>»</dark_green> <gray>"+ capitalize(property) +" set to: <reset><value>",
+                        Placeholder.component("value", MiniMessage.miniMessage().deserialize(result))
+                ));
+            } else {
+                issuer.sendMessage(MiniMessage.miniMessage().deserialize("<dark_green>»</dark_green> <gray>No " + property + " was set."));
+            }
+
+            nextStep.run();
+        });
+    }
+
+    private String capitalize(String str) {
+        if (str == null || str.isEmpty()) return str;
+        return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 }

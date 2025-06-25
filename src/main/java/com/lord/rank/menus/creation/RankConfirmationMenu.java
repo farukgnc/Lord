@@ -1,9 +1,8 @@
-package com.lord.rank.menus;
+package com.lord.rank.menus.creation;
 
 import com.lord.menu.MenuView;
 import com.lord.menu.components.UIComponent;
 import com.lord.menu.utils.ButtonBuilder;
-import com.lord.rank.menus.wizards.RankCreationWizard;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 

@@ -1,8 +1,5 @@
-package com.lord.grant.menus.wizards;
+package com.lord.grant.menus;
 
-import com.lord.grant.menus.DurationSelectionMenu;
-import com.lord.grant.menus.GrantConfirmationMenu;
-import com.lord.grant.menus.RankSelectionMenu;
 import com.lord.menu.MenuManager;
 import com.lord.rank.Rank;
 import com.lord.services.ServiceRegistry;

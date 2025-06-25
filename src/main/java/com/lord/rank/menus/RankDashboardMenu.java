@@ -3,10 +3,9 @@ package com.lord.rank.menus;
 import com.lord.menu.MenuView;
 import com.lord.menu.components.UIComponent;
 import com.lord.menu.utils.ButtonBuilder;
-import com.lord.rank.menus.wizards.RankCreationWizard;
+import com.lord.rank.menus.editor.RankListMenu;
+import com.lord.rank.menus.creation.RankCreationWizard;
 import com.lord.services.ServiceRegistry;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
@@ -45,8 +44,7 @@ public final class RankDashboardMenu extends MenuView {
                         "<gray>to view or edit them."
                 )
                 .onClick(event -> {
-                    viewer.closeInventory();
-                    viewer.sendMessage(Component.text("Rank List & Editor will open here...", NamedTextColor.YELLOW));
+                    this.getMenuManager().open(viewer, new RankListMenu(this.registry));
                 })
                 .build();
 
