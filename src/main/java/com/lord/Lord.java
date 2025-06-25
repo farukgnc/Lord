@@ -10,6 +10,7 @@ import com.lord.grant.repositories.GrantRepository;
 import com.lord.rank.repositories.RankRepository;
 import com.lord.grant.repositories.impl.InMemoryGrantRepository;
 import com.lord.rank.repositories.impl.InMemoryRankRepository;
+import com.lord.services.ChatInputManager;
 import com.lord.services.ServiceRegistry;
 import lombok.Getter;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -31,6 +32,7 @@ public final class Lord extends JavaPlugin {
         this.serviceRegistry.register(GrantRepository.class, new InMemoryGrantRepository());
         this.serviceRegistry.register(MenuManager.class, new MenuManager(this));
         this.serviceRegistry.register(PlayerDataCache.class, new PlayerDataCache(this.serviceRegistry));
+        this.serviceRegistry.register(ChatInputManager.class, new ChatInputManager(this));
 
         this.moduleManager = new ModuleManager();
 

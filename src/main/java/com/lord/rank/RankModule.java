@@ -30,9 +30,33 @@ public final class RankModule implements Module {
 
     private void createDefaultRanks() {
         if (rankRepository.findByName("default").isEmpty()) {
-            Rank defaultRank = new Rank("default");
+            Rank defaultRank = new Rank("Default");
             defaultRank.setPrefix("[Player]");
             defaultRank.setPriority(1);
+
+            rankRepository.save(defaultRank);
+        }
+
+        if (rankRepository.findByName("mod").isEmpty()) {
+            Rank defaultRank = new Rank("Mod");
+            defaultRank.setPrefix("[Mod]");
+            defaultRank.setPriority(100);
+
+            rankRepository.save(defaultRank);
+        }
+
+        if (rankRepository.findByName("admin").isEmpty()) {
+            Rank defaultRank = new Rank("Admin");
+            defaultRank.setPrefix("[Admin]");
+            defaultRank.setPriority(200);
+
+            rankRepository.save(defaultRank);
+        }
+
+        if (rankRepository.findByName("owner").isEmpty()) {
+            Rank defaultRank = new Rank("Owner");
+            defaultRank.setPrefix("[Owner]");
+            defaultRank.setPriority(300);
 
             rankRepository.save(defaultRank);
         }

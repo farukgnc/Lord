@@ -1,4 +1,4 @@
-package com.lord.grant.menu;
+package com.lord.grant.menus;
 
 import com.lord.grant.Grant;
 import com.lord.grant.repositories.GrantRepository;

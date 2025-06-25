@@ -17,16 +17,12 @@ public abstract class MenuView implements UIComponent {
     private final String title;
     private final int rows;
 
-    // Bu, her bir alt bileşenin nerede olduğunu saklayan haritadır.
-    // Dışarıdan doğrudan erişilmesini istemediğimiz için 'protected'
     @Getter(AccessLevel.PROTECTED)
-    private Map<Integer, UIComponent> components;
+    private Map<Integer, UIComponent> composedComponents;
 
-    // Durum yönetimi için: Bu menünün hangi oyuncu için açık olduğunu bilmemiz gerekir.
     @Setter(AccessLevel.PACKAGE)
     private Player viewer;
 
-    // Durum yönetimi için: MenuManager'a erişim.
     @Setter(AccessLevel.PACKAGE)
     private MenuManager menuManager;
 
@@ -35,31 +31,25 @@ public abstract class MenuView implements UIComponent {
         this.rows = rows;
     }
 
-    /**
-     * Bu metot, menünün içeriğini oluşturur.
-     * Geliştirici, bu metodu doldurarak hangi slotta hangi component'in olacağını tanımlar.
-     * @param player Menüyü görüntüleyen oyuncu.
-     * @return Slot-Bileşen haritası.
-     */
     public abstract Map<Integer, UIComponent> compose(Player player);
 
-    /**
-     * Durum değiştiğinde menüyü yenilemek için kullanılır.
-     */
+    public void build(Player player) {
+        this.composedComponents = compose(player);
+    }
+
     public final void refresh() {
         if (this.viewer != null && this.menuManager != null) {
             this.menuManager.update(this.viewer);
         }
     }
 
-    // UIComponent arayüzünden gelen metotlar (bir menünün kendisi tıklanabilir olmadığı için boş kalabilir)
     @Override
     public ItemStack render(Player player) {
-        return null; // Bir menü, başka bir menünün içinde bir item olarak gösterilmez.
+        return null;
     }
 
     @Override
     public Consumer<InventoryClickEvent> getAction() {
-        return event -> {}; // Tıklama eylemi yok.
+        return event -> {};
     }
 }
