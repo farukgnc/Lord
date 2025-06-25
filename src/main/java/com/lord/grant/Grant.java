@@ -1,4 +1,4 @@
-package com.lord.data.grants;
+package com.lord.grant;
 
 import lombok.Getter;
 import lombok.ToString;

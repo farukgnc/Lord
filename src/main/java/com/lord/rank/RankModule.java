@@ -1,16 +1,15 @@
-package com.lord.modules.impl;
+package com.lord.rank;
 
-import com.lord.data.ranks.Rank;
 import com.lord.modules.Module;
-import com.lord.repositories.RankRepository;
+import com.lord.rank.repositories.RankRepository;
 import com.lord.services.ServiceRegistry;
 
 public final class RankModule implements Module {
 
-    private final ServiceRegistry registry;
+    private final RankRepository rankRepository;
 
     public RankModule(ServiceRegistry registry) {
-        this.registry = registry;
+        this.rankRepository = registry.get(RankRepository.class);
     }
 
     @Override
@@ -30,8 +29,6 @@ public final class RankModule implements Module {
     }
 
     private void createDefaultRanks() {
-        RankRepository rankRepository = this.registry.get(RankRepository.class);
-
         if (rankRepository.findByName("default").isEmpty()) {
             Rank defaultRank = new Rank("default");
             defaultRank.setPrefix("[Player]");

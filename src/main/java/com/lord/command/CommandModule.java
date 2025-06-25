@@ -1,12 +1,11 @@
-package com.lord.modules.impl;
+package com.lord.command;
 
 import com.lord.Lord;
-import com.lord.command.CommandManager;
 import com.lord.command.impl.PingCommand;
-import com.lord.command.impl.grant.UngrantCommand;
-import com.lord.command.impl.rank.RankCommand;
-import com.lord.command.impl.grant.GrantCommand;
-import com.lord.command.impl.grant.GrantsCommand;
+import com.lord.grant.commands.UngrantCommand;
+import com.lord.rank.commands.RankCommand;
+import com.lord.grant.commands.GrantCommand;
+import com.lord.grant.commands.GrantsCommand;
 import com.lord.modules.Module;
 import com.lord.services.ServiceRegistry;
 

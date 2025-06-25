@@ -1,6 +1,6 @@
-package com.lord.permission;
+package com.lord.data.playerdata;
 
-import com.lord.data.cached.CachedData;
+import com.lord.data.CachedData;
 import com.lord.services.ServiceRegistry;
 import org.bukkit.entity.Player;
 
@@ -8,13 +8,13 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class PermissionCache {
+public final class PlayerDataCache {
 
     private final Map<UUID, CachedData> cache = new ConcurrentHashMap<>();
-    private final PermissionCalculator calculator;
+    private final PlayerDataCalculator calculator;
 
-    public PermissionCache(ServiceRegistry registry) {
-        this.calculator = new PermissionCalculator(registry);
+    public PlayerDataCache(ServiceRegistry registry) {
+        this.calculator = new PlayerDataCalculator(registry);
     }
 
     /**

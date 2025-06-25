@@ -1,4 +1,4 @@
-package com.lord.data.cached;
+package com.lord.data;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

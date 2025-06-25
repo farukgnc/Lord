@@ -2,14 +2,14 @@ package com.lord;
 
 import com.lord.menu.MenuManager;
 import com.lord.modules.ModuleManager;
-import com.lord.modules.impl.CommandModule;
-import com.lord.modules.impl.RankModule;
-import com.lord.permission.PermissionCache;
-import com.lord.permission.PermissionListener;
-import com.lord.repositories.GrantRepository;
-import com.lord.repositories.RankRepository;
-import com.lord.repositories.impl.InMemoryGrantRepository;
-import com.lord.repositories.impl.InMemoryRankRepository;
+import com.lord.command.CommandModule;
+import com.lord.rank.RankModule;
+import com.lord.data.playerdata.PlayerDataCache;
+import com.lord.data.playerdata.PlayerDataListener;
+import com.lord.grant.repositories.GrantRepository;
+import com.lord.rank.repositories.RankRepository;
+import com.lord.grant.repositories.impl.InMemoryGrantRepository;
+import com.lord.rank.repositories.impl.InMemoryRankRepository;
 import com.lord.services.ServiceRegistry;
 import lombok.Getter;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -30,7 +30,7 @@ public final class Lord extends JavaPlugin {
         this.serviceRegistry.register(RankRepository.class, new InMemoryRankRepository());
         this.serviceRegistry.register(GrantRepository.class, new InMemoryGrantRepository());
         this.serviceRegistry.register(MenuManager.class, new MenuManager(this));
-        this.serviceRegistry.register(PermissionCache.class, new PermissionCache(this.serviceRegistry));
+        this.serviceRegistry.register(PlayerDataCache.class, new PlayerDataCache(this.serviceRegistry));
 
         this.moduleManager = new ModuleManager();
 
@@ -39,7 +39,7 @@ public final class Lord extends JavaPlugin {
 
         this.moduleManager.enableModules();
 
-        new PermissionListener(this.serviceRegistry);
+        new PlayerDataListener(this.serviceRegistry);
 
         getLogger().info("Lord Core eklentisi başarıyla başlatıldı!");
     }

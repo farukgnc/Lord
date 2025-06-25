@@ -1,10 +1,10 @@
-package com.lord.command.impl.grant;
+package com.lord.grant.commands;
 
 import com.lord.command.CommandContext;
 import com.lord.command.ICommand;
 import com.lord.command.annotations.Command;
-import com.lord.permission.PermissionCache;
-import com.lord.repositories.GrantRepository;
+import com.lord.data.playerdata.PlayerDataCache;
+import com.lord.grant.repositories.GrantRepository;
 import com.lord.services.ServiceRegistry;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -24,11 +24,11 @@ import java.util.UUID;
 public final class UngrantCommand implements ICommand {
 
     private final GrantRepository grantRepository;
-    private final PermissionCache permissionCache;
+    private final PlayerDataCache playerDataCache;
 
     public UngrantCommand(ServiceRegistry registry) {
         this.grantRepository = registry.get(GrantRepository.class);
-        this.permissionCache = registry.get(PermissionCache.class);
+        this.playerDataCache = registry.get(PlayerDataCache.class);
     }
 
     @Override
@@ -53,7 +53,7 @@ public final class UngrantCommand implements ICommand {
         this.grantRepository.findById(grantId).ifPresentOrElse(grant -> {
             this.grantRepository.delete(grant);
 
-            this.permissionCache.invalidate(grant.getGranteeUuid());
+            this.playerDataCache.invalidate(grant.getGranteeUuid());
 
             OfflinePlayer target = Bukkit.getOfflinePlayer(grant.getGranteeUuid());
             String targetName = target.getName() != null ? target.getName() : "an unknown player";

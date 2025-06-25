@@ -1,10 +1,10 @@
-package com.lord.command.impl.grant;
+package com.lord.grant.commands;
 
 import com.lord.command.CommandContext;
 import com.lord.command.ICommand;
 import com.lord.command.annotations.Command;
 import com.lord.menu.MenuManager;
-import com.lord.menu.impl.grants.GrantsMenu; // Yeni menümüzü import ediyoruz
+import com.lord.grant.menu.GrantsMenu; // Yeni menümüzü import ediyoruz
 import com.lord.services.ServiceRegistry;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;

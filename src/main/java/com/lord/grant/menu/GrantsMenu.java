@@ -1,10 +1,10 @@
-package com.lord.menu.impl.grants;
+package com.lord.grant.menu;
 
-import com.lord.data.grants.Grant;
+import com.lord.grant.Grant;
 import com.lord.menu.Menu;
 import com.lord.menu.MenuManager;
 import com.lord.menu.buttons.MenuButton;
-import com.lord.repositories.GrantRepository;
+import com.lord.grant.repositories.GrantRepository;
 import com.lord.services.ServiceRegistry;
 import com.lord.utils.TimeUtil;
 import net.kyori.adventure.text.Component;

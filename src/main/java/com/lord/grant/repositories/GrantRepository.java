@@ -1,6 +1,6 @@
-package com.lord.repositories;
+package com.lord.grant.repositories;
 
-import com.lord.data.grants.Grant;
+import com.lord.grant.Grant;
 
 import java.util.Optional;
 import java.util.Set;

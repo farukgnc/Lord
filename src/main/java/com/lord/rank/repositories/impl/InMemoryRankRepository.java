@@ -1,7 +1,7 @@
-package com.lord.repositories.impl;
+package com.lord.rank.repositories.impl;
 
-import com.lord.data.ranks.Rank;
-import com.lord.repositories.RankRepository;
+import com.lord.rank.Rank;
+import com.lord.rank.repositories.RankRepository;
 
 import java.util.Map;
 import java.util.Optional;

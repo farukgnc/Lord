@@ -1,29 +1,28 @@
-package com.lord.permission;
+package com.lord.data.playerdata;
 
-import com.lord.data.cached.CachedData;
-import com.lord.data.cached.MetaData;
-import com.lord.data.cached.PermissionData;
-import com.lord.data.grants.Grant;
-import com.lord.data.ranks.Rank;
-import com.lord.repositories.GrantRepository;
-import com.lord.repositories.RankRepository;
+import com.lord.data.CachedData;
+import com.lord.data.MetaData;
+import com.lord.data.PermissionData;
+import com.lord.grant.Grant;
+import com.lord.rank.Rank;
+import com.lord.grant.repositories.GrantRepository;
+import com.lord.rank.repositories.RankRepository;
 import com.lord.services.ServiceRegistry;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-public final class PermissionCalculator {
+public final class PlayerDataCalculator {
 
     private final GrantRepository grantRepository;
     private final RankRepository rankRepository;
 
-    public PermissionCalculator(ServiceRegistry registry) {
+    public PlayerDataCalculator(ServiceRegistry registry) {
         this.grantRepository = registry.get(GrantRepository.class);
         this.rankRepository = registry.get(RankRepository.class);
     }
 
     public CachedData calculate(UUID playerUuid) {
-        // 1. Oyuncunun aktif grant'lerinden başlangıç rütbelerini bul.
         Set<Rank> initialRanks = this.grantRepository.findByPlayer(playerUuid)
                 .stream()
                 .filter(Grant::isActive)
@@ -32,32 +31,38 @@ public final class PermissionCalculator {
                 .map(Optional::get)
                 .collect(Collectors.toSet());
 
-        // 2. Bu rütbelerden yola çıkarak tüm miras ağacını çöz ve önceliğe göre sırala.
         List<Rank> sortedInheritedRanks = resolveInheritance(initialRanks);
 
-        // 3. Sıralı listeden nihai izinleri ve meta verileri hesapla.
         Map<String, Boolean> permissions = new HashMap<>();
         String prefix = null;
         String suffix = null;
 
         for (Rank rank : sortedInheritedRanks) {
-            // İzinleri topla. Eğer bir izin zaten eklenmişse (daha yüksek öncelikli bir rütbeden gelmişse), es geç.
             for (String permission : rank.getPermissions()) {
-                permissions.putIfAbsent(permission.toLowerCase(), true);
+                // --- GÜNCELLENEN KISIM BAŞLANGICI ---
+                boolean value = true;
+                String node = permission.toLowerCase();
+
+                // Eğer izin '-' ile başlıyorsa, bu negatif bir izindir.
+                if (node.startsWith("-")) {
+                    node = node.substring(1); // '-' işaretini kaldır
+                    value = false;
+                }
+
+                // İzin haritasına ekle. Eğer zaten varsa (daha yüksek öncelikli bir rütbeden) dokunma.
+                permissions.putIfAbsent(node, value);
+                // --- GÜNCELLENEN KISIM BİTİŞİ ---
             }
 
-            // İlk bulduğun prefix'i al (çünkü liste en yüksek öncelikliden başlıyor).
             if (prefix == null && rank.getPrefix() != null) {
                 prefix = rank.getPrefix();
             }
 
-            // İlk bulduğun suffix'i al.
             if (suffix == null && rank.getSuffix() != null) {
                 suffix = rank.getSuffix();
             }
         }
 
-        // 4. Hesaplanan verilerden yeni önbellek nesnelerini oluştur.
         PermissionData permissionData = new PermissionData(permissions);
         MetaData metaData = new MetaData(prefix, suffix, sortedInheritedRanks.isEmpty() ? null : sortedInheritedRanks.get(0).getName());
 

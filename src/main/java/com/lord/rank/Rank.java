@@ -1,4 +1,4 @@
-package com.lord.data.ranks;
+package com.lord.rank;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

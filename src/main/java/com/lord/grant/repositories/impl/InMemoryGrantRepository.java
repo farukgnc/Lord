@@ -1,7 +1,7 @@
-package com.lord.repositories.impl;
+package com.lord.grant.repositories.impl;
 
-import com.lord.data.grants.Grant;
-import com.lord.repositories.GrantRepository;
+import com.lord.grant.Grant;
+import com.lord.grant.repositories.GrantRepository;
 
 import java.util.Collections;
 import java.util.Map;

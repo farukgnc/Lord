@@ -1,12 +1,12 @@
-package com.lord.command.impl.grant;
+package com.lord.grant.commands;
 
 import com.lord.command.CommandContext;
 import com.lord.command.ICommand;
 import com.lord.command.annotations.Command;
-import com.lord.data.grants.Grant;
-import com.lord.permission.PermissionCache;
-import com.lord.repositories.GrantRepository;
-import com.lord.repositories.RankRepository;
+import com.lord.grant.Grant;
+import com.lord.data.playerdata.PlayerDataCache;
+import com.lord.grant.repositories.GrantRepository;
+import com.lord.rank.repositories.RankRepository;
 import com.lord.services.ServiceRegistry;
 import com.lord.utils.TimeUtil;
 import net.kyori.adventure.text.Component;
@@ -32,12 +32,12 @@ public final class GrantCommand implements ICommand {
 
     private final GrantRepository grantRepository;
     private final RankRepository rankRepository;
-    private final PermissionCache permissionCache;
+    private final PlayerDataCache playerDataCache;
 
     public GrantCommand(ServiceRegistry registry) {
         this.grantRepository = registry.get(GrantRepository.class);
         this.rankRepository = registry.get(RankRepository.class);
-        this.permissionCache = registry.get(PermissionCache.class);
+        this.playerDataCache = registry.get(PlayerDataCache.class);
     }
 
     @Override
@@ -83,7 +83,7 @@ public final class GrantCommand implements ICommand {
         Grant newGrant = new Grant(target.getUniqueId(), rankName, issuerUuid, duration);
         this.grantRepository.save(newGrant);
 
-        this.permissionCache.invalidate(target.getUniqueId());
+        this.playerDataCache.invalidate(target.getUniqueId());
 
         sender.sendMessage(Component.text("Successfully granted rank " + rankName + " to " + target.getName() + ".", NamedTextColor.GREEN));
 

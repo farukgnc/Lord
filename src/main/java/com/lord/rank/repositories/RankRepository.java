@@ -1,6 +1,6 @@
-package com.lord.repositories;
+package com.lord.rank.repositories;
 
-import com.lord.data.ranks.Rank;
+import com.lord.rank.Rank;
 
 import java.util.Optional;
 import java.util.Set;
