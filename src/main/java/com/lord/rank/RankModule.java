@@ -1,6 +1,6 @@
 package com.lord.rank;
 
-import com.lord.modules.Module;
+import com.lord.module.Module;
 import com.lord.rank.repositories.RankRepository;
 import com.lord.services.ServiceRegistry;
 

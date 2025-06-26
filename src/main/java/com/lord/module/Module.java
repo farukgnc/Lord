@@ -1,4 +1,4 @@
-package com.lord.modules;
+package com.lord.module;
 
 public interface Module {
 

@@ -1,7 +1,7 @@
 package com.lord;
 
 import com.lord.menu.MenuManager;
-import com.lord.modules.ModuleManager;
+import com.lord.module.ModuleManager;
 import com.lord.command.CommandModule;
 import com.lord.rank.RankModule;
 import com.lord.data.playerdata.PlayerDataCache;

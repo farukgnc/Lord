@@ -1,4 +1,4 @@
-package com.lord.modules;
+package com.lord.module;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -6,7 +6,7 @@ import com.lord.grant.commands.UngrantCommand;
 import com.lord.rank.commands.RankCommand;
 import com.lord.grant.commands.GrantCommand;
 import com.lord.grant.commands.GrantsCommand;
-import com.lord.modules.Module;
+import com.lord.module.Module;
 import com.lord.services.ServiceRegistry;
 
 public final class CommandModule implements Module {
