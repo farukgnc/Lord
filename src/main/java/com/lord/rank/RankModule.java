@@ -9,9 +9,11 @@ import java.util.Set;
 
 public final class RankModule implements Module {
 
+    private final ServiceRegistry registry;
     private final RankRepository rankRepository;
 
     public RankModule(ServiceRegistry registry) {
+        this.registry = registry;
         this.rankRepository = registry.get(RankRepository.class);
     }
 
@@ -20,10 +22,13 @@ public final class RankModule implements Module {
         System.out.println("[" + getName() + "] Creating default ranks...");
         createDefaultRanks();
         System.out.println("[" + getName() + "] Default ranks have been loaded.");
+
+        this.registry.register(RankModule.class, this);
     }
 
     @Override
     public void disable() {
+        this.registry.unregister(RankModule.class);
     }
 
     @Override

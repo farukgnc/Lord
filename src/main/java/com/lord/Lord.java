@@ -1,8 +1,14 @@
 package com.lord;
 
 import com.lord.command.CommandModule;
+import com.lord.config.impl.MainConfig;
+import com.lord.config.impl.MessageConfig;
+import com.lord.data.factory.MongoRepositoryFactory;
 import com.lord.data.playerdata.PlayerDataCache;
 import com.lord.data.playerdata.PlayerDataListener;
+import com.lord.database.Database;
+import com.lord.factory.InMemoryRepositoryFactory;
+import com.lord.factory.RepositoryFactory;
 import com.lord.grant.repositories.GrantRepository;
 import com.lord.grant.repositories.impl.InMemoryGrantRepository;
 import com.lord.menu.MenuManager;
@@ -15,8 +21,11 @@ import com.lord.rank.repositories.RankRepository;
 import com.lord.rank.repositories.impl.InMemoryRankRepository;
 import com.lord.services.ChatInputManager;
 import com.lord.services.ServiceRegistry;
+import lombok.Data;
 import lombok.Getter;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.logging.Level;
 
 @Getter
 public final class Lord extends JavaPlugin {
@@ -32,38 +41,45 @@ public final class Lord extends JavaPlugin {
         this.serviceRegistry = new ServiceRegistry();
         this.serviceRegistry.register(Lord.class, this);
 
-        // 2. Düşük seviyeli servisleri ve veri depolarını (repository) kaydet.
-        this.serviceRegistry.register(MenuManager.class, new MenuManager(this));
-        this.serviceRegistry.register(ChatInputManager.class, new ChatInputManager(this));
-        this.serviceRegistry.register(RankRepository.class, new InMemoryRankRepository());
-        this.serviceRegistry.register(GrantRepository.class, new InMemoryGrantRepository());
-        this.serviceRegistry.register(PunishmentRepository.class, new InMemoryPunishmentRepository());
-        this.serviceRegistry.register(PlayerDataCache.class, new PlayerDataCache(this.serviceRegistry));
+        this.serviceRegistry.register(MainConfig.class, new MainConfig(this));
+        this.serviceRegistry.register(MessageConfig.class, new MessageConfig(this));
 
-        // 3. Yüksek seviyeli modülleri oluştur.
-        RankModule rankModule = new RankModule(this.serviceRegistry);
-        PunishmentModule punishmentModule = new PunishmentModule(this.serviceRegistry);
-        CommandModule commandModule = new CommandModule(this.serviceRegistry);
+        RepositoryFactory repositoryFactory = new InMemoryRepositoryFactory(serviceRegistry);
+        String databaseType = serviceRegistry.get(MainConfig.class).getDatabaseType();
 
-        // 4. Modülleri, diğer bileşenlerin onlara erişebilmesi için servislere kaydet.
-        // Bu, modüller arası iletişimi sağlar.
-        this.serviceRegistry.register(RankModule.class, rankModule);
-        this.serviceRegistry.register(PunishmentModule.class, punishmentModule);
-        this.serviceRegistry.register(CommandModule.class, commandModule);
+        if (databaseType.equals("mongodb")) {
+            repositoryFactory = new MongoRepositoryFactory(serviceRegistry);
+        }
 
-        // 5. Modüllerin yaşam döngüsünü (enable/disable) yönetmek için ModuleManager'a kaydet.
-        this.moduleManager = new ModuleManager();
-        this.moduleManager.registerModule(rankModule);
-        this.moduleManager.registerModule(punishmentModule);
-        this.moduleManager.registerModule(commandModule);
+        repositoryFactory.setup().thenAccept((connected) -> {
+            if (!connected) {
+                getLogger().info("Database initialization failed! Disabling plugin.");
+                getServer().getPluginManager().disablePlugin(this);
+                return;
+            }
 
-        // 6. Tüm modülleri etkinleştir.
-        this.moduleManager.enableModules();
+            // 2. Düşük seviyeli servisleri ve veri depolarını (repository) kaydet.
+            this.serviceRegistry.register(MenuManager.class, new MenuManager(this));
+            this.serviceRegistry.register(ChatInputManager.class, new ChatInputManager(this));
+            this.serviceRegistry.register(RankRepository.class, new InMemoryRankRepository());
+            this.serviceRegistry.register(GrantRepository.class, new InMemoryGrantRepository());
+            this.serviceRegistry.register(PunishmentRepository.class, new InMemoryPunishmentRepository());
+            this.serviceRegistry.register(PlayerDataCache.class, new PlayerDataCache(this.serviceRegistry));
 
-        // 7. Genel dinleyicileri (listener) kaydet.
-        new PlayerDataListener(this.serviceRegistry);
+            // 5. Modüllerin yaşam döngüsünü (enable/disable) yönetmek için ModuleManager'a kaydet.
+            this.moduleManager = new ModuleManager();
+            this.moduleManager.registerModule(new RankModule(this.serviceRegistry));
+            this.moduleManager.registerModule(new PunishmentModule(this.serviceRegistry));
+            this.moduleManager.registerModule(new CommandModule(this.serviceRegistry));
 
-        getLogger().info("Lord Core eklentisi başarıyla başlatıldı!");
+            // 6. Tüm modülleri etkinleştir.
+            this.moduleManager.enableModules();
+
+            // 7. Genel dinleyicileri (listener) kaydet.
+            new PlayerDataListener(this.serviceRegistry);
+
+            getLogger().info("Lord Core eklentisi başarıyla başlatıldı!");
+        });
     }
 
     @Override

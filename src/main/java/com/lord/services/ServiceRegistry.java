@@ -11,6 +11,10 @@ public final class ServiceRegistry {
         this.services.put(serviceClass, serviceInstance);
     }
 
+    public <T> void unregister(Class<T> serviceClass) {
+        this.services.remove(serviceClass);
+    }
+
     public <T> T get(Class<T> serviceClass) {
         Object serviceInstance = this.services.get(serviceClass);
         if (serviceInstance == null) {

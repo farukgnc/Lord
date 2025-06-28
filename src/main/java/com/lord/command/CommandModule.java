@@ -37,10 +37,13 @@ public final class CommandModule implements Module {
         commandManager.registerCommand(new WarnCommand(this.registry));
         commandManager.registerCommand(new UnbanCommand(this.registry));
         commandManager.registerCommand(new UnmuteCommand(this.registry));
+
+        this.registry.register(CommandModule.class, this);
     }
 
     @Override
     public void disable() {
+        this.registry.unregister(CommandModule.class);
     }
 
     @Override

@@ -105,10 +105,13 @@ public final class PunishmentModule implements Module {
         Lord plugin = this.registry.get(Lord.class);
         Bukkit.getPluginManager().registerEvents(new PunishmentListener(this.registry), plugin);
         System.out.println("[" + getName() + "] module has been enabled, listeners are registered.");
+
+        this.registry.register(PunishmentModule.class, this);
     }
 
     @Override
     public void disable() {
+        this.registry.unregister(PunishmentModule.class);
     }
 
     @Override
