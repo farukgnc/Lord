@@ -51,35 +51,34 @@ public final class Lord extends JavaPlugin {
             repositoryFactory = new MongoRepositoryFactory(serviceRegistry);
         }
 
-        repositoryFactory.setup().thenAccept((connected) -> {
-            if (!connected) {
-                getLogger().info("Database initialization failed! Disabling plugin.");
-                getServer().getPluginManager().disablePlugin(this);
-                return;
-            }
+        boolean connected = repositoryFactory.setup().join(); // baslangıcta thread bloklayabiliriz sorun yok
 
-            // 2. Düşük seviyeli servisleri ve veri depolarını (repository) kaydet.
-            this.serviceRegistry.register(MenuManager.class, new MenuManager(this));
-            this.serviceRegistry.register(ChatInputManager.class, new ChatInputManager(this));
-            this.serviceRegistry.register(RankRepository.class, new InMemoryRankRepository());
-            this.serviceRegistry.register(GrantRepository.class, new InMemoryGrantRepository());
-            this.serviceRegistry.register(PunishmentRepository.class, new InMemoryPunishmentRepository());
-            this.serviceRegistry.register(PlayerDataCache.class, new PlayerDataCache(this.serviceRegistry));
+        if (!connected) {
+            getLogger().info("Database initialization failed! Disabling plugin.");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
 
-            // 5. Modüllerin yaşam döngüsünü (enable/disable) yönetmek için ModuleManager'a kaydet.
-            this.moduleManager = new ModuleManager();
-            this.moduleManager.registerModule(new RankModule(this.serviceRegistry));
-            this.moduleManager.registerModule(new PunishmentModule(this.serviceRegistry));
-            this.moduleManager.registerModule(new CommandModule(this.serviceRegistry));
+        repositoryFactory.createRepositories();
 
-            // 6. Tüm modülleri etkinleştir.
-            this.moduleManager.enableModules();
+        // 2. Düşük seviyeli servisleri ve veri depolarını (repository) kaydet.
+        this.serviceRegistry.register(MenuManager.class, new MenuManager(this));
+        this.serviceRegistry.register(ChatInputManager.class, new ChatInputManager(this));
+        this.serviceRegistry.register(PlayerDataCache.class, new PlayerDataCache(this.serviceRegistry));
 
-            // 7. Genel dinleyicileri (listener) kaydet.
-            new PlayerDataListener(this.serviceRegistry);
+        // 5. Modüllerin yaşam döngüsünü (enable/disable) yönetmek için ModuleManager'a kaydet.
+        this.moduleManager = new ModuleManager();
+        this.moduleManager.registerModule(new RankModule(this.serviceRegistry));
+        this.moduleManager.registerModule(new PunishmentModule(this.serviceRegistry));
+        this.moduleManager.registerModule(new CommandModule(this.serviceRegistry));
 
-            getLogger().info("Lord Core eklentisi başarıyla başlatıldı!");
-        });
+        // 6. Tüm modülleri etkinleştir.
+        this.moduleManager.enableModules();
+
+        // 7. Genel dinleyicileri (listener) kaydet.
+        new PlayerDataListener(this.serviceRegistry);
+
+        getLogger().info("Lord Core eklentisi başarıyla başlatıldı!");
     }
 
     @Override

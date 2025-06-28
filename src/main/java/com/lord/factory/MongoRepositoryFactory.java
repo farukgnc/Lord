@@ -33,17 +33,9 @@ public class MongoRepositoryFactory implements RepositoryFactory {
     }
 
     @Override
-    public void createRankRepository() {
+    public void createRepositories() {
         registry.register(RankRepository.class, new InMemoryRankRepository());
-    }
-
-    @Override
-    public void createGrantRepository() {
         registry.register(GrantRepository.class, new InMemoryGrantRepository());
-    }
-
-    @Override
-    public void createPunishmentRepository() {
         registry.register(PunishmentRepository.class, new InMemoryPunishmentRepository());
     }
 
