@@ -6,32 +6,23 @@ import com.lord.config.impl.MessageConfig;
 import com.lord.data.factory.MongoRepositoryFactory;
 import com.lord.data.playerdata.PlayerDataCache;
 import com.lord.data.playerdata.PlayerDataListener;
-import com.lord.database.Database;
 import com.lord.factory.InMemoryRepositoryFactory;
 import com.lord.factory.RepositoryFactory;
-import com.lord.grant.repositories.GrantRepository;
-import com.lord.grant.repositories.impl.InMemoryGrantRepository;
 import com.lord.menu.MenuManager;
 import com.lord.module.ModuleManager;
 import com.lord.punishment.PunishmentModule;
-import com.lord.punishment.repositories.PunishmentRepository;
-import com.lord.punishment.repositories.impl.InMemoryPunishmentRepository;
 import com.lord.rank.RankModule;
-import com.lord.rank.repositories.RankRepository;
-import com.lord.rank.repositories.impl.InMemoryRankRepository;
 import com.lord.services.ChatInputManager;
 import com.lord.services.ServiceRegistry;
-import lombok.Data;
 import lombok.Getter;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.util.logging.Level;
 
 @Getter
 public final class Lord extends JavaPlugin {
 
     private ServiceRegistry serviceRegistry;
     private ModuleManager moduleManager;
+    private RepositoryFactory repositoryFactory;
 
     @Override
     public void onEnable() {
@@ -44,7 +35,7 @@ public final class Lord extends JavaPlugin {
         this.serviceRegistry.register(MainConfig.class, new MainConfig(this));
         this.serviceRegistry.register(MessageConfig.class, new MessageConfig(this));
 
-        RepositoryFactory repositoryFactory = new InMemoryRepositoryFactory(serviceRegistry);
+        repositoryFactory = new InMemoryRepositoryFactory(serviceRegistry);
         String databaseType = serviceRegistry.get(MainConfig.class).getDatabaseType();
 
         if (databaseType.equals("mongodb")) {
@@ -87,6 +78,10 @@ public final class Lord extends JavaPlugin {
 
         if (this.moduleManager != null) {
             this.moduleManager.disableModules();
+        }
+        
+        if (this.repositoryFactory != null) {
+            this.repositoryFactory.close();
         }
 
         getLogger().info("Lord Core eklentisi başarıyla devre dışı bırakıldı.");
