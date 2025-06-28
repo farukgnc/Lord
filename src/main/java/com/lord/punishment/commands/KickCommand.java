@@ -1,0 +1,62 @@
+package com.lord.punishment.commands;
+
+import com.lord.command.CommandContext;
+import com.lord.command.ICommand;
+import com.lord.command.annotations.Command;
+import com.lord.punishment.PunishmentModule;
+import com.lord.punishment.PunishmentType;
+import com.lord.punishment.exceptions.CannotPunishSelfException;
+import com.lord.punishment.exceptions.PlayerAlreadyPunishedException;
+import com.lord.services.ServiceRegistry;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
+@Command(
+        name = "kick",
+        permission = "lord.command.kick",
+        description = "Kicks a player from the server.",
+        usage = "/kick <player> [reason...]"
+)
+public final class KickCommand implements ICommand {
+
+    private final PunishmentModule punishmentModule;
+
+    public KickCommand(ServiceRegistry registry) {
+        this.punishmentModule = registry.get(PunishmentModule.class);
+    }
+
+    @Override
+    public void execute(CommandContext context) {
+        CommandSender sender = context.sender();
+        if (context.length() < 1) {
+            sender.sendMessage(Component.text("Usage: /kick <player> [reason...]", NamedTextColor.RED));
+            return;
+        }
+
+        Player target = Bukkit.getPlayer(context.arg(0));
+
+        if (target == null) {
+            sender.sendMessage(Component.text("Player not found or is not online: " + context.arg(0), NamedTextColor.RED));
+            return;
+        }
+
+        String reason = "None";
+        if (context.length() > 1) {
+            reason = Arrays.stream(context.args(), 1, context.args().length)
+                    .collect(Collectors.joining(" "));
+        }
+
+        try {
+            this.punishmentModule.executePunishment(PunishmentType.KICK, target.getUniqueId(), target.getName(), sender, Duration.ZERO, reason);
+        } catch (CannotPunishSelfException | PlayerAlreadyPunishedException e) {
+            sender.sendMessage(Component.text(e.getMessage(), NamedTextColor.RED));
+        }
+    }
+}

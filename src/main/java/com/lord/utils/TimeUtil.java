@@ -4,20 +4,32 @@ import lombok.experimental.UtilityClass;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 
 @UtilityClass
 public class TimeUtil {
 
-    public Duration parseDuration(String arg) {
-        if (arg == null || arg.equalsIgnoreCase("permanent") || arg.equalsIgnoreCase("perm")) {
-            return Duration.ZERO;
+    /**
+     * Parses a string like "30d", "12h", "perm" into a Duration.
+     * Returns an empty Optional if the format is not a valid duration.
+     * Returns Optional of Duration.ZERO for permanent.
+     *
+     * @param arg The string to parse.
+     * @return An Optional containing the Duration.
+     */
+    public Optional<Duration> parseDuration(String arg) {
+        if (arg == null) {
+            return Optional.empty();
+        }
+        if (arg.equalsIgnoreCase("permanent") || arg.equalsIgnoreCase("perm")) {
+            return Optional.of(Duration.ZERO);
         }
 
         try {
-            long value = Long.parseLong(arg.substring(0, arg.length() - 1));
             char unit = arg.charAt(arg.length() - 1);
+            long value = Long.parseLong(arg.substring(0, arg.length() - 1));
 
-            return switch (unit) {
+            return Optional.of(switch (unit) {
                 case 's' -> Duration.ofSeconds(value);
                 case 'm' -> Duration.ofMinutes(value);
                 case 'h' -> Duration.ofHours(value);
@@ -25,10 +37,10 @@ public class TimeUtil {
                 case 'w' -> Duration.of(value, ChronoUnit.WEEKS);
                 case 'M' -> Duration.of(value, ChronoUnit.MONTHS);
                 case 'y' -> Duration.of(value, ChronoUnit.YEARS);
-                default -> Duration.ZERO;
-            };
+                default -> throw new IllegalArgumentException("Invalid time unit");
+            });
         } catch (Exception e) {
-            return Duration.ZERO;
+            return Optional.empty();
         }
     }
 
@@ -48,7 +60,6 @@ public class TimeUtil {
         if (minutes > 0) sb.append(minutes).append("m ");
         if (seconds > 0) sb.append(seconds).append("s");
 
-        // Eğer çok küçük bir süre ise (örn: sadece saniye), sondaki boşluğu kaldır.
         String result = sb.toString().trim();
         return result.isEmpty() ? "Permanent" : result;
     }

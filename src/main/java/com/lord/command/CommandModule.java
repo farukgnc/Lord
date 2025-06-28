@@ -3,6 +3,7 @@ package com.lord.command;
 import com.lord.Lord;
 import com.lord.command.impl.PingCommand;
 import com.lord.grant.commands.UngrantCommand;
+import com.lord.punishment.commands.*;
 import com.lord.rank.commands.RankCommand;
 import com.lord.grant.commands.GrantCommand;
 import com.lord.grant.commands.GrantsCommand;
@@ -24,10 +25,18 @@ public final class CommandModule implements Module {
         CommandManager commandManager = new CommandManager(plugin);
 
         commandManager.registerCommand(new PingCommand());
+
         commandManager.registerCommand(new RankCommand(this.registry));
         commandManager.registerCommand(new GrantCommand(this.registry));
         commandManager.registerCommand(new GrantsCommand(this.registry));
         commandManager.registerCommand(new UngrantCommand(this.registry));
+
+        commandManager.registerCommand(new BanCommand(this.registry));
+        commandManager.registerCommand(new MuteCommand(this.registry));
+        commandManager.registerCommand(new KickCommand(this.registry));
+        commandManager.registerCommand(new WarnCommand(this.registry));
+        commandManager.registerCommand(new UnbanCommand(this.registry));
+        commandManager.registerCommand(new UnmuteCommand(this.registry));
     }
 
     @Override

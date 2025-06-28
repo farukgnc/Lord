@@ -1,8 +1,8 @@
 package com.lord.rank.menus.creation;
 
 import com.lord.menu.MenuManager;
-import com.lord.rank.Rank;
-import com.lord.rank.repositories.RankRepository;
+import com.lord.rank.RankModule;
+import com.lord.rank.exceptions.RankAlreadyExistsException;
 import com.lord.services.ChatInputManager;
 import com.lord.services.ServiceRegistry;
 import lombok.Getter;
@@ -136,29 +136,26 @@ public final class RankCreationWizard {
         registry.get(MenuManager.class).open(issuer, new RankConfirmationMenu(this));
     }
 
-    /**
-     * Final Step: Creates the rank with all the collected data.
-     * This is called by the "Confirm" button in the RankConfirmationMenu.
-     */
     public void createRank() {
-        RankRepository rankRepository = registry.get(RankRepository.class);
+        RankModule rankModule = registry.get(RankModule.class);
 
-        if (rankRepository.findByName(this.name).isPresent()) {
+        try {
+            rankModule.createRank(
+                    this.name,
+                    this.priority,
+                    this.prefix,
+                    this.suffix,
+                    this.selectedParentNames
+            );
+
+            issuer.sendMessage(MiniMessage.miniMessage().deserialize(
+                    "<dark_green>»</dark_green> <green>Rank <white><rank_name></white> has been created successfully!",
+                    Placeholder.unparsed("rank_name", this.name)
+            ));
+
+        } catch (RankAlreadyExistsException e) {
             issuer.sendMessage(Component.text("A rank with this name already exists. Creation cancelled.", NamedTextColor.RED));
-            return;
         }
-
-        Rank newRank = new Rank(this.name);
-        newRank.setPriority(this.priority);
-        if (this.prefix != null) newRank.setPrefix(this.prefix);
-        if (this.suffix != null) newRank.setSuffix(this.suffix);
-        newRank.getParentRankNames().addAll(this.selectedParentNames);
-
-        rankRepository.save(newRank);
-        issuer.sendMessage(MiniMessage.miniMessage().deserialize(
-                "<dark_green>»</dark_green> <green>Rank <white><rank_name></white> has been created successfully!",
-                Placeholder.unparsed("rank_name", this.name)
-        ));
     }
 
     /**
