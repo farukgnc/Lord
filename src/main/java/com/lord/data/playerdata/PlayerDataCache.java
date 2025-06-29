@@ -1,53 +1,40 @@
 package com.lord.data.playerdata;
 
 import com.lord.data.CachedData;
-import com.lord.services.ServiceRegistry;
-import org.bukkit.entity.Player;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class PlayerDataCache {
 
     private final Map<UUID, CachedData> cache = new ConcurrentHashMap<>();
-    private final PlayerDataCalculator calculator;
-
-    public PlayerDataCache(ServiceRegistry registry) {
-        this.calculator = new PlayerDataCalculator(registry);
-    }
 
     /**
-     * Gets a player's cached data.
-     * If not present in the cache, it calculates, caches, and then returns it.
-     *
-     * @param playerUuid The UUID of the player.
-     * @return The player's CachedData.
+     * Bir oyuncunun önceden yüklenmiş ve hesaplanmış verilerini önbellekten alır.
+     * Bu metot senkrondur ve herhangi bir hesaplama veya veritabanı işlemi tetiklemez.
+     * @param playerUuid Oyuncunun UUID'si.
+     * @return Oyuncunun CachedData'sını içeren bir Optional, önbellekte yoksa boş.
      */
-    public CachedData getPlayerData(UUID playerUuid) {
-        // computeIfAbsent: Eğer UUID için bir veri yoksa, calculator.calculate'ı çalıştırır,
-        // sonucu cache'e ekler ve sonra o yeni sonucu döndürür. Varsa, mevcut olanı döndürür.
-        // Bu, if(cache.contains) kontrolünden çok daha temiz ve atomik bir işlemdir.
-        return this.cache.computeIfAbsent(playerUuid, this.calculator::calculate);
+    public Optional<CachedData> getPlayerData(UUID playerUuid) {
+        return Optional.ofNullable(this.cache.get(playerUuid));
     }
 
     /**
-     * Checks if a player has a specific permission node.
-     *
-     * @param player The player to check.
-     * @param node   The permission node.
-     * @return True if the player has the permission, false otherwise.
+     * Bir oyuncu için önceden hesaplanmış veriyi önbelleğe alır.
+     * Bu metot, genellikle oyuncu giriş yaptığında PlayerDataListener tarafından çağrılır.
+     * @param playerUuid Oyuncunun UUID'si.
+     * @param data Önbelleğe alınacak, önceden hesaplanmış veri.
      */
-    public boolean hasPermission(Player player, String node) {
-        CachedData data = getPlayerData(player.getUniqueId());
-        return data.getPermissionData().hasPermission(node);
+    public void cacheData(UUID playerUuid, CachedData data) {
+        this.cache.put(playerUuid, data);
     }
 
     /**
-     * Invalidates and removes a player's data from the cache.
-     * This should be called whenever a player's grants are changed.
-     *
-     * @param playerUuid The UUID of the player to invalidate.
+     * Bir oyuncunun verilerini önbellekten kaldırır.
+     * Bu, oyuncu sunucudan çıktığında veya grant'ları değiştiğinde çağrılır.
+     * @param playerUuid Geçersiz kılınacak oyuncunun UUID'si.
      */
     public void invalidate(UUID playerUuid) {
         this.cache.remove(playerUuid);

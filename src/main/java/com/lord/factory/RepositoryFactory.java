@@ -7,7 +7,7 @@ public interface RepositoryFactory {
 
     CompletableFuture<Boolean> connect();
 
-    void createRepositories();
+    CompletableFuture<Void> createRepositories();
 
     void disconnect();
 }

@@ -28,10 +28,12 @@ public class InMemoryRepositoryFactory implements RepositoryFactory {
     }
 
     @Override
-    public void createRepositories() {
+    public CompletableFuture<Void> createRepositories() {
         registry.register(RankRepository.class, new InMemoryRankRepository());
         registry.register(GrantRepository.class, new InMemoryGrantRepository());
         registry.register(PunishmentRepository.class, new InMemoryPunishmentRepository());
+
+        return null;
     }
 
     @Override

@@ -1,8 +1,11 @@
 package com.lord.data.playerdata;
 
+import com.lord.data.CachedData;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissibleBase;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Optional;
 
 public final class PlayerPermissible extends PermissibleBase {
 
@@ -19,13 +22,23 @@ public final class PlayerPermissible extends PermissibleBase {
 
     @Override
     public boolean hasPermission(@NotNull String permission) {
-        // Önce bizim akıllı önbellek sistemimiz cevabı versin.
-        boolean result = this.playerDataCache.hasPermission(this.player, permission);
+        // 1. Önbellekten oyuncunun hesaplanmış verisini al. Bu anlık bir işlemdir.
+        Optional<CachedData> cachedDataOpt = this.playerDataCache.getPlayerData(this.player.getUniqueId());
 
-        // Bizim sistemimiz 'true' derse, sonuç nettir.
-        // Bizim sistemimiz 'false' derse (yani özel bir kural yoksa),
-        // Bukkit'in varsayılan davranışına (op kontrolü gibi) saygı duymak için
-        // eski beyne de bir soralım.
-        return result || this.oldPermissible.hasPermission(permission);
+        if (cachedDataOpt.isPresent()) {
+            // 2. Eğer veri varsa, asıl izin kontrolünü bu veri üzerinden yap.
+            // Bu, bizim grant ve rank sistemimizden gelen sonucu verir.
+            boolean hasPerm = cachedDataOpt.get().getPermissionData().hasPermission(permission);
+
+            // Bizim sistemimiz 'true' derse, sonuç nettir, oyuncunun izni vardır.
+            if (hasPerm) {
+                return true;
+            }
+        }
+
+        // 3. Bizim sistemimiz 'false' dediyse VEYA oyuncunun verisi bir şekilde önbellekte yoksa,
+        // Bukkit'in varsayılan davranışlarına (op kontrolü, '*' izni gibi) saygı duymak için
+        // orijinal (eski) izin denetleyicisine de bir soralım.
+        return this.oldPermissible.hasPermission(permission);
     }
 }

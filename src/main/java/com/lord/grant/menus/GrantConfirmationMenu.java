@@ -1,10 +1,12 @@
 package com.lord.grant.menus;
 
+import com.lord.data.playerdata.PlayerDataCache;
 import com.lord.grant.Grant;
 import com.lord.grant.repositories.GrantRepository;
 import com.lord.menu.MenuView;
 import com.lord.menu.components.UIComponent;
 import com.lord.menu.utils.ButtonBuilder;
+import com.lord.services.GrantCacheService;
 import com.lord.utils.TimeUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -39,15 +41,24 @@ public final class GrantConfirmationMenu extends MenuView {
                     UUID issuerUuid = wizard.getIssuer().getUniqueId();
 
                     Grant newGrant = new Grant(
-                            wizard.getTarget().getUniqueId(),
+                            wizard.getTargetUuid(),
                             wizard.getSelectedRank().getName(),
                             issuerUuid,
                             wizard.getSelectedDuration()
                     );
-                    grantRepository.save(newGrant);
+
+                    grantRepository.save(newGrant).thenRun(() -> {
+                        // 2. Kaydetme işlemi bittiğinde, hedef oyuncunun grant önbelleğini geçersiz kıl.
+                        wizard.getRegistry().get(GrantCacheService.class).invalidate(wizard.getTargetUuid());
+
+                        // 3. Ayrıca, izinlerin yeniden hesaplanması için PlayerDataCache'i de geçersiz kıl.
+                        // Bu, oyuncu online ise anında yeni izinlerini almasını sağlar.
+                        wizard.getRegistry().get(PlayerDataCache.class).invalidate(wizard.getTargetUuid());
+
+                        player.sendMessage(Component.text("Grant successful!", NamedTextColor.GREEN));
+                    });
 
                     player.closeInventory();
-                    player.sendMessage(Component.text("Grant successful!", NamedTextColor.GREEN));
                 })
                 .build());
 
@@ -56,7 +67,7 @@ public final class GrantConfirmationMenu extends MenuView {
         components.put(13, new ButtonBuilder(Material.PAPER)
                 .name("<yellow>Grant Summary")
                 .lore(
-                        "<gray>Target: <white>" + wizard.getTarget().getName(),
+                        "<gray>Target: <white>" + wizard.getTargetName(),
                         "<gray>Rank: <white>" + wizard.getSelectedRank().getName(),
                         "<gray>Duration: <white>" + durationString
                 )

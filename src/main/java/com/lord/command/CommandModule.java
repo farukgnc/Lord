@@ -2,7 +2,6 @@ package com.lord.command;
 
 import com.lord.Lord;
 import com.lord.command.impl.PingCommand;
-import com.lord.grant.commands.UngrantCommand;
 import com.lord.punishment.commands.*;
 import com.lord.rank.commands.RankCommand;
 import com.lord.grant.commands.GrantCommand;
@@ -29,7 +28,6 @@ public final class CommandModule implements Module {
         commandManager.registerCommand(new RankCommand(this.registry));
         commandManager.registerCommand(new GrantCommand(this.registry));
         commandManager.registerCommand(new GrantsCommand(this.registry));
-        commandManager.registerCommand(new UngrantCommand(this.registry));
 
         commandManager.registerCommand(new BanCommand(this.registry));
         commandManager.registerCommand(new MuteCommand(this.registry));

@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class InMemoryGrantRepository implements GrantRepository {
@@ -17,17 +18,17 @@ public final class InMemoryGrantRepository implements GrantRepository {
     private final Map<UUID, Set<Grant>> grantsByPlayer = new ConcurrentHashMap<>();
 
     @Override
-    public Optional<Grant> findById(UUID grantId) {
-        return Optional.ofNullable(this.grantsById.get(grantId));
+    public CompletableFuture<Optional<Grant>> findById(UUID grantId) {
+        return CompletableFuture.completedFuture(Optional.ofNullable(this.grantsById.get(grantId)));
     }
 
     @Override
-    public Set<Grant> findByPlayer(UUID playerUuid) {
-        return Collections.unmodifiableSet(this.grantsByPlayer.getOrDefault(playerUuid, Collections.emptySet()));
+    public CompletableFuture<Set<Grant>> findByPlayer(UUID playerUuid) {
+        return CompletableFuture.completedFuture(Collections.unmodifiableSet(this.grantsByPlayer.getOrDefault(playerUuid, Collections.emptySet())));
     }
 
     @Override
-    public void save(Grant grant) {
+    public CompletableFuture<Void> save(Grant grant) {
         this.grantsById.put(grant.getUniqueId(), grant);
 
         // Şimdi oyuncu indeksini güncelle.
@@ -36,10 +37,12 @@ public final class InMemoryGrantRepository implements GrantRepository {
 
         playerGrants.remove(grant);
         playerGrants.add(grant);
+
+        return null;
     }
 
     @Override
-    public void delete(Grant grant) {
+    public CompletableFuture<Void> delete(Grant grant) {
         this.grantsById.remove(grant.getUniqueId());
 
         Set<Grant> playerGrants = this.grantsByPlayer.get(grant.getGranteeUuid());
@@ -50,5 +53,7 @@ public final class InMemoryGrantRepository implements GrantRepository {
                 this.grantsByPlayer.remove(grant.getGranteeUuid());
             }
         }
+
+        return null;
     }
 }

@@ -5,7 +5,6 @@ import com.lord.data.MetaData;
 import com.lord.data.PermissionData;
 import com.lord.grant.Grant;
 import com.lord.rank.Rank;
-import com.lord.grant.repositories.GrantRepository;
 import com.lord.rank.repositories.RankRepository;
 import com.lord.services.ServiceRegistry;
 
@@ -14,17 +13,21 @@ import java.util.stream.Collectors;
 
 public final class PlayerDataCalculator {
 
-    private final GrantRepository grantRepository;
     private final RankRepository rankRepository;
 
     public PlayerDataCalculator(ServiceRegistry registry) {
-        this.grantRepository = registry.get(GrantRepository.class);
+        // Sadece rank'ları çözümlemek için RankRepository'e ihtiyacı var.
+        // RankRepository'nin okuma metotlarının hızlı (bellekten) olduğu varsayılır.
         this.rankRepository = registry.get(RankRepository.class);
     }
 
-    public CachedData calculate(UUID playerUuid) {
-        Set<Rank> initialRanks = this.grantRepository.findByPlayer(playerUuid)
-                .stream()
+    /**
+     * Önceden getirilmiş bir grant setine dayanarak bir oyuncunun tüm önbellek verilerini hesaplar.
+     * @param grants Oyuncunun veritabanından çekilmiş olan grant'ları.
+     * @return Hesaplanan CachedData nesnesi.
+     */
+    public CachedData calculate(Set<Grant> grants) {
+        Set<Rank> initialRanks = grants.stream()
                 .filter(Grant::isActive)
                 .map(grant -> this.rankRepository.findByName(grant.getRankName()))
                 .filter(Optional::isPresent)
@@ -39,19 +42,13 @@ public final class PlayerDataCalculator {
 
         for (Rank rank : sortedInheritedRanks) {
             for (String permission : rank.getPermissions()) {
-                // --- GÜNCELLENEN KISIM BAŞLANGICI ---
                 boolean value = true;
                 String node = permission.toLowerCase();
-
-                // Eğer izin '-' ile başlıyorsa, bu negatif bir izindir.
                 if (node.startsWith("-")) {
-                    node = node.substring(1); // '-' işaretini kaldır
+                    node = node.substring(1);
                     value = false;
                 }
-
-                // İzin haritasına ekle. Eğer zaten varsa (daha yüksek öncelikli bir rütbeden) dokunma.
                 permissions.putIfAbsent(node, value);
-                // --- GÜNCELLENEN KISIM BİTİŞİ ---
             }
 
             if (prefix == null && rank.getPrefix() != null) {
@@ -66,34 +63,30 @@ public final class PlayerDataCalculator {
         PermissionData permissionData = new PermissionData(permissions);
         MetaData metaData = new MetaData(prefix, suffix, sortedInheritedRanks.isEmpty() ? null : sortedInheritedRanks.get(0).getName());
 
+        // Hesaplanan verilerle birlikte, bu hesaba kaynak olan orijinal grant'ları da sakla.
         return new CachedData(permissionData, metaData);
     }
 
     private List<Rank> resolveInheritance(Set<Rank> initialRanks) {
-        // Gezilen tüm rütbeleri ve isimlerini takip etmek için
         Map<String, Rank> resolvedRanks = new HashMap<>();
-        // Döngüsel mirasları engellemek için ziyaret edilenleri işaretle
         Set<String> visited = new HashSet<>();
-        // Gezinme için bir yığın (stack)
         Deque<Rank> stack = new ArrayDeque<>(initialRanks);
 
         while (!stack.isEmpty()) {
             Rank current = stack.pop();
 
             if (!visited.add(current.getName().toLowerCase())) {
-                continue; // Bu rütbeyi zaten gezdik, döngüyü kır.
+                continue;
             }
 
             resolvedRanks.put(current.getName().toLowerCase(), current);
 
-            // Bu rütbenin miras aldığı üst rütbeleri bul ve yığına ekle.
             for (String parentName : current.getParentRankNames()) {
                 this.rankRepository.findByName(parentName)
-                        .ifPresent(stack::push); // Eğer üst rütbe varsa yığına ekle.
+                        .ifPresent(stack::push);
             }
         }
 
-        // Tüm bulunan rütbeleri öncelik sırasına göre yüksekten düşüğe doğru sırala.
         return resolvedRanks.values().stream()
                 .sorted(Comparator.comparingInt(Rank::getPriority).reversed())
                 .collect(Collectors.toList());

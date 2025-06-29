@@ -50,12 +50,12 @@ public final class Lord extends JavaPlugin {
             return;
         }
 
-        repositoryFactory.createRepositories();
+        repositoryFactory.createRepositories().join(); // bunu da bloklamak zorundayız
 
         // 2. Düşük seviyeli servisleri ve veri depolarını (repository) kaydet.
         this.serviceRegistry.register(MenuManager.class, new MenuManager(this));
         this.serviceRegistry.register(ChatInputManager.class, new ChatInputManager(this));
-        this.serviceRegistry.register(PlayerDataCache.class, new PlayerDataCache(this.serviceRegistry));
+        this.serviceRegistry.register(PlayerDataCache.class, new PlayerDataCache());
 
         // 5. Modüllerin yaşam döngüsünü (enable/disable) yönetmek için ModuleManager'a kaydet.
         this.moduleManager = new ModuleManager();

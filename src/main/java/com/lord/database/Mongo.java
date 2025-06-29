@@ -9,6 +9,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import lombok.Getter;
+import org.bson.UuidRepresentation;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
@@ -49,6 +50,7 @@ public class Mongo {
                 ConnectionString uri = new ConnectionString(connectionString);
                 MongoClientSettings settings = MongoClientSettings.builder()
                         .applyConnectionString(uri)
+                        .uuidRepresentation(UuidRepresentation.STANDARD)
                         .build();
                 this.client = MongoClients.create(settings);
                 // ConnectionString'de DB adı varsa onu kullan, yoksa parametreden geleni kullan

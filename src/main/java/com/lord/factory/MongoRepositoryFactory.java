@@ -3,10 +3,12 @@ package com.lord.factory;
 import com.lord.database.Mongo;
 import com.lord.grant.repositories.GrantRepository;
 import com.lord.grant.repositories.impl.InMemoryGrantRepository;
+import com.lord.grant.repositories.impl.MongoGrantRepository;
 import com.lord.punishment.repositories.PunishmentRepository;
 import com.lord.punishment.repositories.impl.InMemoryPunishmentRepository;
 import com.lord.rank.repositories.RankRepository;
 import com.lord.rank.repositories.impl.MongoRankRepository;
+import com.lord.services.GrantCacheService;
 import com.lord.services.ServiceRegistry;
 
 import java.util.concurrent.CompletableFuture;
@@ -29,21 +31,20 @@ public class MongoRepositoryFactory implements RepositoryFactory {
     }
 
     @Override
-    public void createRepositories() {
+    public CompletableFuture<Void> createRepositories() {
         MongoRankRepository mongoRankRepository = new MongoRankRepository(registry);
-
-        // 3. Repository'nin iç önbelleğini doldurmasını sağla ve bekle.
-        System.out.println("[Lord] Initializing RankRepository cache...");
-        mongoRankRepository.loadAllRanks().join();
-
-        // 4. Oluşturulan ve içi doldurulan repository'yi sisteme kaydet.
         registry.register(RankRepository.class, mongoRankRepository);
 
+        System.out.println("[Lord] Initializing RankRepository cache...");
 
-        // --- Diğer Repository'ler ---
-        // TODO: Gelecekte Grant ve Punishment için de Mongo repository'leri yazılacak.
-        registry.register(GrantRepository.class, new InMemoryGrantRepository());
-        registry.register(PunishmentRepository.class, new InMemoryPunishmentRepository());
+        return mongoRankRepository.loadAllRanks().thenRun(() -> {
+            registry.register(GrantRepository.class, new MongoGrantRepository(mongo.getDatabase()));
+
+            GrantCacheService grantCacheService = new GrantCacheService(registry);
+            registry.register(GrantCacheService.class, grantCacheService);
+
+            registry.register(PunishmentRepository.class, new InMemoryPunishmentRepository());
+        });
     }
 
     @Override

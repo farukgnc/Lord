@@ -5,15 +5,16 @@ import com.lord.grant.Grant;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public interface GrantRepository {
 
-    Optional<Grant> findById(UUID grantId);
+    CompletableFuture<Optional<Grant>> findById(UUID grantId);
 
-    Set<Grant> findByPlayer(UUID playerUuid);
+    CompletableFuture<Set<Grant>> findByPlayer(UUID playerUuid);
 
-    void save(Grant grant);
+    CompletableFuture<Void> save(Grant grant);
 
-    void delete(Grant grant);
+    CompletableFuture<Void> delete(Grant grant);
 
 }
