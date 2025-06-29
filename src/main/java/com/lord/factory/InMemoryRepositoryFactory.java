@@ -1,7 +1,6 @@
 package com.lord.factory;
 
 import com.lord.database.Mongo;
-import com.lord.factory.RepositoryFactory;
 import com.lord.grant.repositories.GrantRepository;
 import com.lord.grant.repositories.impl.InMemoryGrantRepository;
 import com.lord.punishment.repositories.PunishmentRepository;
@@ -24,26 +23,18 @@ public class InMemoryRepositoryFactory implements RepositoryFactory {
     }
 
     @Override
-    public CompletableFuture<Boolean> setup() {
+    public CompletableFuture<Boolean> connect() {
         return CompletableFuture.completedFuture(true);
     }
 
     @Override
-    public void createRankRepository() {
+    public void createRepositories() {
         registry.register(RankRepository.class, new InMemoryRankRepository());
-    }
-
-    @Override
-    public void createGrantRepository() {
         registry.register(GrantRepository.class, new InMemoryGrantRepository());
-    }
-
-    @Override
-    public void createPunishmentRepository() {
         registry.register(PunishmentRepository.class, new InMemoryPunishmentRepository());
     }
 
     @Override
-    public void close() {
+    public void disconnect() {
     }
 }

@@ -12,8 +12,9 @@ import lombok.Getter;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
-public class Mongo implements Database {
+public class Mongo {
 
     private final Lord plugin;
 
@@ -30,7 +31,6 @@ public class Mongo implements Database {
         this.plugin = registry.get(Lord.class);
     }
 
-    @Override
     public CompletableFuture<Boolean> connect() {
         return CompletableFuture.supplyAsync(() -> {
             try {
@@ -66,7 +66,6 @@ public class Mongo implements Database {
         });
     }
 
-    @Override
     public void disconnect() {
         if (client != null) {
             client.close();

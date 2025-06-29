@@ -19,9 +19,22 @@ public final class RankModule implements Module {
 
     @Override
     public void enable() {
-        System.out.println("[" + getName() + "] Creating default ranks...");
-        createDefaultRanks();
-        System.out.println("[" + getName() + "] Default ranks have been loaded.");
+        System.out.println("[" + getName() + "] module has been enabled.");
+
+        // `RankRepository`'nin yüklenmesi artık `MongoRepositoryFactory` içinde
+        // ve Lord.java'daki .join() ile senkronize edildiği için,
+        // bu noktada rank'ların bellekte olduğundan eminiz.
+
+        // Şimdi, veritabanının boş olup olmadığını ASENKRON olarak kontrol et.
+        this.rankRepository.isEmpty().thenAccept(empty -> {
+            if (empty) {
+                // Eğer veritabanı tamamen boşsa, varsayılan rank'ları oluştur.
+                System.out.println("[" + getName() + "] No ranks found in data source, creating default ranks...");
+                createDefaultRanks();
+            } else {
+                System.out.println("[" + getName() + "] Ranks were loaded successfully from data source.");
+            }
+        });
 
         this.registry.register(RankModule.class, this);
     }

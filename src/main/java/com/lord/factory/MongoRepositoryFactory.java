@@ -1,15 +1,12 @@
-package com.lord.data.factory;
+package com.lord.factory;
 
-import com.lord.Lord;
 import com.lord.database.Mongo;
-import com.lord.factory.RepositoryFactory;
 import com.lord.grant.repositories.GrantRepository;
 import com.lord.grant.repositories.impl.InMemoryGrantRepository;
 import com.lord.punishment.repositories.PunishmentRepository;
 import com.lord.punishment.repositories.impl.InMemoryPunishmentRepository;
-import com.lord.rank.Rank;
 import com.lord.rank.repositories.RankRepository;
-import com.lord.rank.repositories.impl.InMemoryRankRepository;
+import com.lord.rank.repositories.impl.MongoRankRepository;
 import com.lord.services.ServiceRegistry;
 
 import java.util.concurrent.CompletableFuture;
@@ -21,12 +18,11 @@ public class MongoRepositoryFactory implements RepositoryFactory {
 
     public MongoRepositoryFactory(ServiceRegistry registry) {
         this.registry = registry;
-
         registry.register(RepositoryFactory.class, this);
     }
 
     @Override
-    public CompletableFuture<Boolean> setup() {
+    public CompletableFuture<Boolean> connect() {
         mongo = new Mongo(registry);
         registry.register(Mongo.class, mongo);
         return mongo.connect();
@@ -34,13 +30,24 @@ public class MongoRepositoryFactory implements RepositoryFactory {
 
     @Override
     public void createRepositories() {
-        registry.register(RankRepository.class, new InMemoryRankRepository());
+        MongoRankRepository mongoRankRepository = new MongoRankRepository(registry);
+
+        // 3. Repository'nin iç önbelleğini doldurmasını sağla ve bekle.
+        System.out.println("[Lord] Initializing RankRepository cache...");
+        mongoRankRepository.loadAllRanks().join();
+
+        // 4. Oluşturulan ve içi doldurulan repository'yi sisteme kaydet.
+        registry.register(RankRepository.class, mongoRankRepository);
+
+
+        // --- Diğer Repository'ler ---
+        // TODO: Gelecekte Grant ve Punishment için de Mongo repository'leri yazılacak.
         registry.register(GrantRepository.class, new InMemoryGrantRepository());
         registry.register(PunishmentRepository.class, new InMemoryPunishmentRepository());
     }
 
     @Override
-    public void close() {
+    public void disconnect() {
         if (this.mongo != null) {
             this.mongo.disconnect();
         }

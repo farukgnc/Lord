@@ -6,6 +6,7 @@ import com.lord.rank.repositories.RankRepository;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class InMemoryRankRepository implements RankRepository {
@@ -24,6 +25,11 @@ public final class InMemoryRankRepository implements RankRepository {
     }
 
     @Override
+    public CompletableFuture<Set<Rank>> loadAllRanks() {
+        return null;
+    }
+
+    @Override
     public void save(Rank rank) {
         this.ranks.put(rank.getName().toLowerCase(), rank);
     }
@@ -31,5 +37,10 @@ public final class InMemoryRankRepository implements RankRepository {
     @Override
     public void delete(String name) {
         this.ranks.remove(name.toLowerCase());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> isEmpty() {
+        return CompletableFuture.completedFuture(ranks.isEmpty());
     }
 }

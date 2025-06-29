@@ -4,6 +4,7 @@ import com.lord.rank.Rank;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 public interface RankRepository {
 
@@ -11,8 +12,12 @@ public interface RankRepository {
 
     Set<Rank> getAllRanks();
 
+    CompletableFuture<Set<Rank>> loadAllRanks();
+
     void save(Rank rank);
 
     void delete(String name);
+
+    CompletableFuture<Boolean> isEmpty();
 
 }

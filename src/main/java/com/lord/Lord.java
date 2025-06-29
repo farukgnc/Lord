@@ -3,10 +3,10 @@ package com.lord;
 import com.lord.command.CommandModule;
 import com.lord.config.impl.MainConfig;
 import com.lord.config.impl.MessageConfig;
-import com.lord.data.factory.MongoRepositoryFactory;
 import com.lord.data.playerdata.PlayerDataCache;
 import com.lord.data.playerdata.PlayerDataListener;
 import com.lord.factory.InMemoryRepositoryFactory;
+import com.lord.factory.MongoRepositoryFactory;
 import com.lord.factory.RepositoryFactory;
 import com.lord.menu.MenuManager;
 import com.lord.module.ModuleManager;
@@ -42,7 +42,7 @@ public final class Lord extends JavaPlugin {
             repositoryFactory = new MongoRepositoryFactory(serviceRegistry);
         }
 
-        boolean connected = repositoryFactory.setup().join(); // baslangıcta thread bloklayabiliriz sorun yok
+        boolean connected = repositoryFactory.connect().join(); // baslangıcta thread bloklayabiliriz sorun yok
 
         if (!connected) {
             getLogger().info("Database initialization failed! Disabling plugin.");
@@ -79,9 +79,9 @@ public final class Lord extends JavaPlugin {
         if (this.moduleManager != null) {
             this.moduleManager.disableModules();
         }
-        
+
         if (this.repositoryFactory != null) {
-            this.repositoryFactory.close();
+            this.repositoryFactory.disconnect();
         }
 
         getLogger().info("Lord Core eklentisi başarıyla devre dışı bırakıldı.");
