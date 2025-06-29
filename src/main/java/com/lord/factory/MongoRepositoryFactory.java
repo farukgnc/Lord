@@ -2,13 +2,14 @@ package com.lord.factory;
 
 import com.lord.database.Mongo;
 import com.lord.grant.repositories.GrantRepository;
-import com.lord.grant.repositories.impl.InMemoryGrantRepository;
 import com.lord.grant.repositories.impl.MongoGrantRepository;
+import com.lord.punishment.PunishmentCacheService;
 import com.lord.punishment.repositories.PunishmentRepository;
 import com.lord.punishment.repositories.impl.InMemoryPunishmentRepository;
+import com.lord.punishment.repositories.impl.MongoPunishmentRepository;
 import com.lord.rank.repositories.RankRepository;
 import com.lord.rank.repositories.impl.MongoRankRepository;
-import com.lord.services.GrantCacheService;
+import com.lord.grant.GrantCacheService;
 import com.lord.services.ServiceRegistry;
 
 import java.util.concurrent.CompletableFuture;
@@ -43,7 +44,10 @@ public class MongoRepositoryFactory implements RepositoryFactory {
             GrantCacheService grantCacheService = new GrantCacheService(registry);
             registry.register(GrantCacheService.class, grantCacheService);
 
-            registry.register(PunishmentRepository.class, new InMemoryPunishmentRepository());
+            registry.register(PunishmentRepository.class, new MongoPunishmentRepository(mongo.getDatabase()));
+
+            PunishmentCacheService punishmentCacheService = new PunishmentCacheService(registry);
+            registry.register(PunishmentCacheService.class, punishmentCacheService);
         });
     }
 

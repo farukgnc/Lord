@@ -20,6 +20,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 @Getter
 public final class Lord extends JavaPlugin {
 
+    // TODO punishmentsmenu 154
+    // TODO ban punishments menude gözükmüyor
+
     private ServiceRegistry serviceRegistry;
     private ModuleManager moduleManager;
     private RepositoryFactory repositoryFactory;

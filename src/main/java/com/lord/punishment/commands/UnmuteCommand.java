@@ -6,7 +6,6 @@ import com.lord.command.ICommand;
 import com.lord.command.annotations.Command;
 import com.lord.punishment.PunishmentModule;
 import com.lord.punishment.PunishmentType;
-import com.lord.punishment.exceptions.PlayerNotPunishedException;
 import com.lord.services.ServiceRegistry;
 import com.lord.utils.PlayerResolver;
 import net.kyori.adventure.text.Component;
@@ -51,11 +50,7 @@ public final class UnmuteCommand implements ICommand {
                 }
 
                 UUID targetUuid = targetUuidOpt.get();
-                try {
-                    this.punishmentModule.pardonPunishment(PunishmentType.MUTE, targetUuid, targetName, sender);
-                } catch (PlayerNotPunishedException e) {
-                    sender.sendMessage(Component.text(e.getMessage(), NamedTextColor.RED));
-                }
+                this.punishmentModule.pardonPunishment(PunishmentType.MUTE, targetUuid, targetName, sender);
             });
         });
     }

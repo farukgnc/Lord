@@ -5,8 +5,6 @@ import com.lord.command.ICommand;
 import com.lord.command.annotations.Command;
 import com.lord.punishment.PunishmentModule;
 import com.lord.punishment.PunishmentType;
-import com.lord.punishment.exceptions.CannotPunishSelfException;
-import com.lord.punishment.exceptions.PlayerAlreadyPunishedException;
 import com.lord.services.ServiceRegistry;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -53,10 +51,6 @@ public final class KickCommand implements ICommand {
                     .collect(Collectors.joining(" "));
         }
 
-        try {
-            this.punishmentModule.executePunishment(PunishmentType.KICK, target.getUniqueId(), target.getName(), sender, Duration.ZERO, reason);
-        } catch (CannotPunishSelfException | PlayerAlreadyPunishedException e) {
-            sender.sendMessage(Component.text(e.getMessage(), NamedTextColor.RED));
-        }
+        this.punishmentModule.executePunishment(PunishmentType.KICK, target.getUniqueId(), target.getName(), sender, Duration.ZERO, reason);
     }
 }

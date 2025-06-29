@@ -1,67 +1,49 @@
 package com.lord.punishment.repositories.impl;
 
 import com.lord.punishment.Punishment;
+import com.lord.punishment.PunishmentStatusFilter;
 import com.lord.punishment.PunishmentType;
 import com.lord.punishment.repositories.PunishmentRepository;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public final class InMemoryPunishmentRepository implements PunishmentRepository {
 
-    // Ana Depo: Tüm cezaları kendi ID'leri ile saklar.
     private final Map<UUID, Punishment> punishmentsById = new ConcurrentHashMap<>();
 
-    // İndeks 1: Oyuncu UUID'sini, o oyuncuya ait tüm cezalara (geçmiş dahil) eşler.
-    private final Map<UUID, Set<Punishment>> punishmentsByPlayer = new ConcurrentHashMap<>();
-
     @Override
-    public Optional<Punishment> findById(UUID punishmentId) {
-        return Optional.ofNullable(this.punishmentsById.get(punishmentId));
+    public CompletableFuture<List<Punishment>> findWithFilters(UUID playerUuid, PunishmentStatusFilter statusFilter, @Nullable PunishmentType typeFilter) {
+        return CompletableFuture.supplyAsync(() -> punishmentsById.values().stream()
+                .filter(p -> p.getPunishedUuid().equals(playerUuid))
+                .filter(p -> typeFilter == null || p.getType() == typeFilter)
+                .filter(p -> {
+                    switch (statusFilter) {
+                        case ACTIVE: return p.isActive();
+                        case INACTIVE: return !p.isActive();
+                        case ALL:
+                        default: return true;
+                    }
+                })
+                .sorted(Comparator.comparing(Punishment::getCreationTime).reversed())
+                .collect(Collectors.toList()));
     }
 
     @Override
-    public Set<Punishment> findByPlayer(UUID playerUuid) {
-        return Collections.unmodifiableSet(this.punishmentsByPlayer.getOrDefault(playerUuid, Collections.emptySet()));
+    public CompletableFuture<Void> save(Punishment punishment) {
+        punishmentsById.put(punishment.getUniqueId(), punishment);
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public Set<Punishment> findActiveByType(UUID playerUuid, PunishmentType type) {
-        // İndeks yerine, oyuncunun tüm cezalarını alıp, aktif ve doğru türde olanları filtreleyelim.
-        // Bu, daha az karmaşık bir yapı sunar ve performans bu ölçekte yeterlidir.
-        return this.punishmentsByPlayer.getOrDefault(playerUuid, Collections.emptySet())
-                .stream()
-                .filter(p -> p.getType() == type && p.isActive())
-                .collect(Collectors.toSet());
-    }
-
-    @Override
-    public void save(Punishment punishment) {
-        // 1. Ana depoya ekle/güncelle.
-        this.punishmentsById.put(punishment.getUniqueId(), punishment);
-
-        // 2. Oyuncu indeksini güncelle.
-        Set<Punishment> playerPunishments = this.punishmentsByPlayer.computeIfAbsent(punishment.getPunishedUuid(), k -> new HashSet<>());
-
-        // Önce eski versiyonu (varsa) kaldırıp yenisini eklemek, güncelleme durumları için en güvenli yoldur.
-        playerPunishments.remove(punishment); // remove() metodu doğru çalışmak için Punishment sınıfında equals/hashCode gerekir.
-        playerPunishments.add(punishment);
-    }
-
-    @Override
-    public void delete(Punishment punishment) {
-        // 1. Ana depodan kaldır.
-        this.punishmentsById.remove(punishment.getUniqueId());
-
-        // 2. Oyuncu indeksinden kaldır.
-        Set<Punishment> playerPunishments = this.punishmentsByPlayer.get(punishment.getPunishedUuid());
-        if (playerPunishments != null) {
-            playerPunishments.remove(punishment);
-
-            if (playerPunishments.isEmpty()) {
-                this.punishmentsByPlayer.remove(punishment.getPunishedUuid());
-            }
-        }
+    public CompletableFuture<Void> delete(Punishment punishment) {
+        punishmentsById.remove(punishment.getUniqueId());
+        return CompletableFuture.completedFuture(null);
     }
 }

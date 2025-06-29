@@ -1,10 +1,10 @@
-package com.lord.services;
+package com.lord.grant;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.lord.grant.Grant;
 import com.lord.grant.repositories.GrantRepository;
+import com.lord.services.ServiceRegistry;
 
 import java.util.Set;
 import java.util.UUID;

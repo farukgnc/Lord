@@ -6,8 +6,6 @@ import com.lord.command.ICommand;
 import com.lord.command.annotations.Command;
 import com.lord.punishment.PunishmentModule;
 import com.lord.punishment.PunishmentType;
-import com.lord.punishment.exceptions.CannotPunishSelfException;
-import com.lord.punishment.exceptions.PlayerAlreadyPunishedException;
 import com.lord.services.ServiceRegistry;
 import com.lord.utils.PlayerResolver;
 import com.lord.utils.TimeUtil;
@@ -74,11 +72,7 @@ public final class MuteCommand implements ICommand {
                             .collect(Collectors.joining(" "));
                 }
 
-                try {
-                    this.punishmentModule.executePunishment(PunishmentType.MUTE, targetUuid, targetName, sender, duration, reason);
-                } catch (PlayerAlreadyPunishedException | CannotPunishSelfException e) {
-                    sender.sendMessage(Component.text(e.getMessage(), NamedTextColor.RED));
-                }
+                this.punishmentModule.executePunishment(PunishmentType.MUTE, targetUuid, targetName, sender, duration, reason);
             });
         });
     }

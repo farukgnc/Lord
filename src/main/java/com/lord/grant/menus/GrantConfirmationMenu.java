@@ -6,7 +6,7 @@ import com.lord.grant.repositories.GrantRepository;
 import com.lord.menu.MenuView;
 import com.lord.menu.components.UIComponent;
 import com.lord.menu.utils.ButtonBuilder;
-import com.lord.services.GrantCacheService;
+import com.lord.grant.GrantCacheService;
 import com.lord.utils.TimeUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;

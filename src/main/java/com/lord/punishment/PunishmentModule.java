@@ -2,90 +2,94 @@ package com.lord.punishment;
 
 import com.lord.Lord;
 import com.lord.module.Module;
-import com.lord.punishment.exceptions.CannotPunishSelfException;
-import com.lord.punishment.exceptions.PlayerAlreadyPunishedException;
-import com.lord.punishment.exceptions.PlayerNotPunishedException;
 import com.lord.punishment.repositories.PunishmentRepository;
 import com.lord.services.ServiceRegistry;
 import com.lord.utils.TimeUtil;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.time.Duration;
-import java.util.Set;
+import java.time.Instant;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public final class PunishmentModule implements Module {
 
     private final ServiceRegistry registry;
     private final PunishmentRepository punishmentRepository;
+    private final PunishmentCacheService punishmentCacheService;
+    private final Lord plugin;
 
     public PunishmentModule(ServiceRegistry registry) {
         this.registry = registry;
+        this.plugin = registry.get(Lord.class);
         this.punishmentRepository = registry.get(PunishmentRepository.class);
+        this.punishmentCacheService = registry.get(PunishmentCacheService.class);
     }
 
-    public Punishment executePunishment(PunishmentType type, UUID targetUuid, String targetName, CommandSender issuer, Duration duration, String reason)
-            throws PlayerAlreadyPunishedException, CannotPunishSelfException {
+    public void executePunishment(PunishmentType type, UUID targetUuid, String targetName, CommandSender issuer, Duration duration, String reason) {
+        /*if (issuer instanceof Player && ((Player) issuer).getUniqueId().equals(targetUuid)) {
+            issuer.sendMessage(Component.text("You cannot punish yourself.", NamedTextColor.RED));
+            return;
+        }*/
 
-        if (issuer instanceof Player && ((Player) issuer).getUniqueId().equals(targetUuid)) {
-            throw new CannotPunishSelfException("You cannot punish yourself.");
-        }
+        CompletableFuture<Boolean> checkFuture = (type == PunishmentType.BAN || type == PunishmentType.MUTE)
+                ? punishmentRepository.findWithFilters(targetUuid, PunishmentStatusFilter.ACTIVE, type).thenApply(list -> !list.isEmpty())
+                : CompletableFuture.completedFuture(false);
 
-        if (type == PunishmentType.BAN || type == PunishmentType.MUTE) {
-            if (!this.punishmentRepository.findActiveByType(targetUuid, type).isEmpty()) {
-                throw new PlayerAlreadyPunishedException(targetName + " already has an active " + type.name().toLowerCase() + ".");
+        checkFuture.thenAcceptAsync(alreadyPunished -> {
+            if (alreadyPunished) {
+                runOnMainThread(() -> issuer.sendMessage(Component.text(targetName + " already has an active " + type.name().toLowerCase() + ".", NamedTextColor.RED)));
+                return;
             }
-        }
 
-        UUID issuerUuid = (issuer instanceof Player player) ? player.getUniqueId() : null;
+            Punishment punishment = new Punishment(type, targetUuid, reason, (issuer instanceof Player p) ? p.getUniqueId() : null, duration);
 
-        Punishment punishment = new Punishment(type, targetUuid, reason, issuerUuid, duration);
-        this.punishmentRepository.save(punishment);
+            this.punishmentRepository.save(punishment).thenRun(() -> {
+                this.punishmentCacheService.invalidate(targetUuid);
+            });
 
-        performPunishmentActions(punishment, targetName, issuer.getName());
-
-        return punishment;
+            runOnMainThread(() -> performPunishmentActions(punishment, targetName, issuer.getName()));
+        });
     }
 
-    public void pardonPunishment(PunishmentType type, UUID targetUuid, String targetName, CommandSender pardoner)
-            throws PlayerNotPunishedException {
+    public void pardonPunishment(PunishmentType type, UUID targetUuid, String targetName, CommandSender pardoner) {
+        this.punishmentRepository.findWithFilters(targetUuid, PunishmentStatusFilter.ACTIVE, type).thenAcceptAsync(activePunishments -> {
+            if (activePunishments.isEmpty()) {
+                runOnMainThread(() -> pardoner.sendMessage(Component.text(targetName + " does not have an active " + type.name().toLowerCase() + ".", NamedTextColor.RED)));
+                return;
+            }
 
-        Set<Punishment> activePunishments = this.punishmentRepository.findActiveByType(targetUuid, type);
+            activePunishments.forEach(this.punishmentRepository::delete);
+            this.punishmentCacheService.invalidate(targetUuid);
 
-        if (activePunishments.isEmpty()) {
-            throw new PlayerNotPunishedException(targetName + " does not have an active " + type.name().toLowerCase() + ".");
-        }
-
-        for (Punishment punishment : activePunishments) {
-            this.punishmentRepository.delete(punishment);
-        }
-
-        String pardonerName = (pardoner instanceof Player) ? pardoner.getName() : "Console";
-        String verb = "un" + type.getPastTense();
-
-        Component broadcastMessage = MiniMessage.miniMessage().deserialize(
-                "<green><b>PARDON</b></green> <gray>»</gray> <white><target></white> was <verb> by <white><pardoner></white>.",
-                Placeholder.unparsed("target", targetName),
-                Placeholder.unparsed("verb", verb),
-                Placeholder.unparsed("pardoner", pardonerName)
-        );
-        Bukkit.broadcast(broadcastMessage);
+            runOnMainThread(() -> {
+                String pardonerName = (pardoner instanceof Player) ? pardoner.getName() : "Console";
+                String verb = "un" + type.getPastTense();
+                Component broadcastMessage = MiniMessage.miniMessage().deserialize(
+                        "<green><b>PARDON</b></green> <gray>»</gray> <white><target></white> was <verb> by <white><pardoner></white>.",
+                        Placeholder.unparsed("target", targetName),
+                        Placeholder.unparsed("verb", verb),
+                        Placeholder.unparsed("pardoner", pardonerName)
+                );
+                Bukkit.broadcast(broadcastMessage);
+            });
+        });
     }
 
     private void performPunishmentActions(Punishment punishment, String targetName, String issuerName) {
         if (punishment.getType() == PunishmentType.BAN || punishment.getType() == PunishmentType.KICK) {
-            OfflinePlayer target = Bukkit.getOfflinePlayer(punishment.getPunishedUuid());
-            if (target.isOnline() && target.getPlayer() != null) {
+            Player onlineTarget = Bukkit.getPlayer(punishment.getPunishedUuid());
+            if (onlineTarget != null) {
                 String kickReason = "You have been " + punishment.getType().getPastTense() + ".\n" +
                         "Reason: " + punishment.getReason() + "\n" +
-                        (punishment.getType() == PunishmentType.BAN ? "Expires: " + TimeUtil.formatDuration(punishment.getDuration()) : "");
-                target.getPlayer().kick(Component.text(kickReason));
+                        (punishment.getType() == PunishmentType.BAN ? "Expires: " + TimeUtil.formatDuration(Duration.between(Instant.now(), punishment.getExpiry())) : "");
+                onlineTarget.kick(Component.text(kickReason));
             }
         }
 
@@ -100,13 +104,16 @@ public final class PunishmentModule implements Module {
         Bukkit.broadcast(broadcastMessage);
     }
 
+    private void runOnMainThread(Runnable task) {
+        Bukkit.getScheduler().runTask(this.plugin, task);
+    }
+
     @Override
     public void enable() {
-        Lord plugin = this.registry.get(Lord.class);
-        Bukkit.getPluginManager().registerEvents(new PunishmentListener(this.registry), plugin);
-        System.out.println("[" + getName() + "] module has been enabled, listeners are registered.");
-
+        // Bu modül etkinleştirildiğinde, PunishmentListener'ı da kaydet.
+        Bukkit.getPluginManager().registerEvents(new PunishmentListener(this.registry), this.plugin);
         this.registry.register(PunishmentModule.class, this);
+        System.out.println("[" + getName() + "] module has been enabled and listeners are registered.");
     }
 
     @Override

@@ -3,7 +3,8 @@ package com.lord.data.playerdata;
 import com.lord.Lord;
 import com.lord.data.CachedData;
 import com.lord.grant.Grant;
-import com.lord.services.GrantCacheService;
+import com.lord.grant.GrantCacheService;
+import com.lord.punishment.PunishmentCacheService;
 import com.lord.services.ServiceRegistry;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -27,6 +28,7 @@ public final class PlayerDataListener implements Listener {
 
     private final PlayerDataCache playerDataCache;
     private final GrantCacheService grantCacheService;
+    private final PunishmentCacheService punishmentCacheService;
     private final PlayerDataCalculator calculator;
     private final Field permissibleField;
 
@@ -34,6 +36,7 @@ public final class PlayerDataListener implements Listener {
         Lord plugin = registry.get(Lord.class);
         this.playerDataCache = registry.get(PlayerDataCache.class);
         this.grantCacheService = registry.get(GrantCacheService.class);
+        this.punishmentCacheService = registry.get(PunishmentCacheService.class);
         this.calculator = new PlayerDataCalculator(registry);
 
         try {
@@ -50,23 +53,19 @@ public final class PlayerDataListener implements Listener {
     public void onPreLogin(AsyncPlayerPreLoginEvent event) {
         UUID playerUuid = event.getUniqueId();
 
-        // 1. Akıllı önbellek servisinden grant'ları iste.
-        // Bu, oyuncu ilk kez giriyorsa arka planda veritabanından çekme işlemini tetikler.
+        // Grant'ları ve ceza verilerini aynı anda, paralel olarak yüklemeye başla.
         CompletableFuture<Set<Grant>> grantsFuture = this.grantCacheService.getGrants(playerUuid);
+        this.punishmentCacheService.getPunishments(playerUuid); // Bu, sadece önbelleği ısıtmak için tetiklenir.
 
         try {
-            // 2. Grant'ların gelmesini bekle (10 saniye timeout ile).
+            // Sadece izinler için kritik olan grant'ların gelmesini bekle.
             Set<Grant> grants = grantsFuture.get(10, TimeUnit.SECONDS);
 
-            // 3. Gelen grant'lar ile oyuncunun tüm izin/meta verisini hesapla.
+            // Gelen grant'lar ile oyuncunun izin/meta verisini hesapla.
             CachedData calculatedData = this.calculator.calculate(grants);
 
-            // 4. Hesaplanan bu hazır veriyi, izin sistemi için olan PlayerDataCache'e koy.
+            // Hesaplanan veriyi izin önbelleğine koy.
             this.playerDataCache.cacheData(playerUuid, calculatedData);
-
-            // 5. Oyuncunun ham grant verilerini GrantCacheService'e tekrar koyarak
-            // zaman aşımına uğramasını engelle ve online olduğu sürece taze kalmasını sağla.
-            this.grantCacheService.preCacheGrants(playerUuid, grants);
 
         } catch (Exception e) {
             event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER,
@@ -79,7 +78,6 @@ public final class PlayerDataListener implements Listener {
     public void onPlayerLogin(PlayerLoginEvent event) {
         Player player = event.getPlayer();
         try {
-            // Bukkit'in izin sistemine kendi özel denetleyicimizi enjekte et.
             PermissibleBase oldPermissible = (PermissibleBase) this.permissibleField.get(player);
             PlayerPermissible newPermissible = new PlayerPermissible(player, this.playerDataCache, oldPermissible);
             this.permissibleField.set(player, newPermissible);
@@ -92,8 +90,9 @@ public final class PlayerDataListener implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         UUID playerUuid = event.getPlayer().getUniqueId();
-        // Oyuncu çıktığında, hem izin önbelleğini hem de grant önbelleğini temizle.
+        // Oyuncu çıktığında, tüm önbelleklerini temizle.
         this.playerDataCache.invalidate(playerUuid);
         this.grantCacheService.invalidate(playerUuid);
+        this.punishmentCacheService.invalidate(playerUuid);
     }
 }

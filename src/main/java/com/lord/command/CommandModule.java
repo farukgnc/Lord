@@ -35,6 +35,7 @@ public final class CommandModule implements Module {
         commandManager.registerCommand(new WarnCommand(this.registry));
         commandManager.registerCommand(new UnbanCommand(this.registry));
         commandManager.registerCommand(new UnmuteCommand(this.registry));
+        commandManager.registerCommand(new PunishmentsCommand(this.registry));
 
         this.registry.register(CommandModule.class, this);
     }
