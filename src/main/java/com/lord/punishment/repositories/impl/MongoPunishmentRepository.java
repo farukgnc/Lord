@@ -79,17 +79,24 @@ public final class MongoPunishmentRepository implements PunishmentRepository {
     }
 
     private Document punishmentToDocument(Punishment p) {
-        return new Document("_id", p.getUniqueId())
+        Document doc = new Document("_id", p.getUniqueId())
                 .append("type", p.getType().name())
                 .append("punishedUuid", p.getPunishedUuid())
                 .append("reason", p.getReason())
                 .append("issuerUuid", p.getIssuerUuid())
                 .append("creationTime", p.getCreationTime().toEpochMilli())
-                .append("duration", p.getDuration().getSeconds());
+                .append("duration", p.getDuration().getSeconds())
+                .append("pardoned", p.isPardoned());
+
+        if (p.isPardoned()) {
+            doc.append("pardonerUuid", p.getPardonerUuid());
+            doc.append("pardonTime", p.getPardonTime().toEpochMilli());
+        }
+        return doc;
     }
 
     private Punishment documentToPunishment(Document doc) {
-        return new Punishment(
+        Punishment punishment = new Punishment(
                 doc.get("_id", UUID.class),
                 PunishmentType.valueOf(doc.getString("type")),
                 doc.get("punishedUuid", UUID.class),
@@ -98,5 +105,12 @@ public final class MongoPunishmentRepository implements PunishmentRepository {
                 Instant.ofEpochMilli(doc.getLong("creationTime")),
                 Duration.ofSeconds(doc.getLong("duration"))
         );
+
+        if (doc.getBoolean("pardoned", false)) {
+            punishment.setPardoned(true);
+            punishment.setPardonerUuid(doc.get("pardonerUuid", UUID.class));
+            punishment.setPardonTime(Instant.ofEpochMilli(doc.getLong("pardonTime")));
+        }
+        return punishment;
     }
 }

@@ -65,7 +65,17 @@ public final class PunishmentModule implements Module {
                 return;
             }
 
-            activePunishments.forEach(this.punishmentRepository::delete);
+            UUID pardonerUuid = (pardoner instanceof Player p) ? p.getUniqueId() : null;
+
+            for (Punishment punishmentToPardon : activePunishments) {
+                punishmentToPardon.setPardoned(true);
+                punishmentToPardon.setPardonerUuid(pardonerUuid);
+                punishmentToPardon.setPardonTime(Instant.now());
+
+                // Güncellenmiş ceza nesnesini veritabanına geri kaydet.
+                this.punishmentRepository.save(punishmentToPardon);
+            }
+
             this.punishmentCacheService.invalidate(targetUuid);
 
             runOnMainThread(() -> {
