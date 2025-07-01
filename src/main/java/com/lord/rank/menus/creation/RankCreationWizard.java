@@ -1,9 +1,9 @@
 package com.lord.rank.menus.creation;
 
+import com.lord.chat.ChatService;
 import com.lord.menu.MenuManager;
 import com.lord.rank.RankModule;
 import com.lord.rank.exceptions.RankAlreadyExistsException;
-import com.lord.services.ChatInputManager;
 import com.lord.services.ServiceRegistry;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
@@ -24,7 +24,7 @@ public final class RankCreationWizard {
 
     private final ServiceRegistry registry;
     private final Player issuer;
-    private final ChatInputManager chatInputManager;
+    private final ChatService chatService;
 
     // Data collected throughout the wizard
     private String name;
@@ -36,7 +36,7 @@ public final class RankCreationWizard {
     public RankCreationWizard(ServiceRegistry registry, Player issuer) {
         this.registry = registry;
         this.issuer = issuer;
-        this.chatInputManager = registry.get(ChatInputManager.class);
+        this.chatService = registry.get(ChatService.class);
     }
 
     /**
@@ -55,7 +55,7 @@ public final class RankCreationWizard {
                 "\n<green>Please type the name for the new rank in chat.\n<gray>Type <white>'cancel'</white> to abort.\n"
         ));
 
-        this.chatInputManager.prompt(issuer, input -> {
+        this.chatService.prompt(issuer, input -> {
             if (input.equalsIgnoreCase("cancel")) {
                 issuer.sendMessage(Component.text("Creation cancelled.", NamedTextColor.YELLOW));
                 return;
@@ -79,7 +79,7 @@ public final class RankCreationWizard {
         );
         issuer.sendMessage(message);
 
-        this.chatInputManager.prompt(issuer, input -> {
+        this.chatService.prompt(issuer, input -> {
             if (input.equalsIgnoreCase("cancel")) {
                 issuer.sendMessage(Component.text("Creation cancelled.", NamedTextColor.YELLOW));
                 return;
@@ -180,7 +180,7 @@ public final class RankCreationWizard {
 
         issuer.sendMessage(message);
 
-        this.chatInputManager.prompt(issuer, input -> {
+        this.chatService.prompt(issuer, input -> {
             if (input.equalsIgnoreCase("cancel")) {
                 issuer.sendMessage(Component.text("Creation cancelled.", NamedTextColor.YELLOW));
                 return;

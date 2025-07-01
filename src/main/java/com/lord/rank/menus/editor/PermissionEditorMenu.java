@@ -1,11 +1,11 @@
 package com.lord.rank.menus.editor;
 
+import com.lord.chat.ChatService;
 import com.lord.menu.AbstractPaginatedMenu;
 import com.lord.menu.components.UIComponent;
 import com.lord.menu.utils.ButtonBuilder;
 import com.lord.rank.Rank;
 import com.lord.rank.repositories.RankRepository;
-import com.lord.services.ChatInputManager;
 import com.lord.services.ServiceRegistry;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -66,12 +66,12 @@ public final class PermissionEditorMenu extends AbstractPaginatedMenu<String> {
                 .name("<green>Add Permission")
                 .lore("<gray>Click to add a new permission node.")
                 .onClick(event -> {
-                    ChatInputManager inputManager = registry.get(ChatInputManager.class);
+                    ChatService chatService = registry.get(ChatService.class);
                     viewer.closeInventory();
                     viewer.sendMessage(Component.text("Please type the permission node in chat.", NamedTextColor.GREEN));
                     viewer.sendMessage(Component.text("Prefix with '-' to negate (e.g., -essentials.fly).", NamedTextColor.GRAY));
 
-                    inputManager.prompt(viewer, input -> {
+                    chatService.prompt(viewer, input -> {
                         this.rank.getPermissions().add(input.toLowerCase());
                         this.registry.get(RankRepository.class).save(this.rank);
                         viewer.sendMessage(Component.text("Permission '" + input + "' added.", NamedTextColor.GREEN));

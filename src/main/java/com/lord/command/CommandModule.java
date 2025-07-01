@@ -1,6 +1,7 @@
 package com.lord.command;
 
 import com.lord.Lord;
+import com.lord.chat.ChatCommand;
 import com.lord.command.impl.PingCommand;
 import com.lord.punishment.commands.*;
 import com.lord.rank.commands.RankCommand;
@@ -36,6 +37,8 @@ public final class CommandModule implements Module {
         commandManager.registerCommand(new UnbanCommand(this.registry));
         commandManager.registerCommand(new UnmuteCommand(this.registry));
         commandManager.registerCommand(new PunishmentsCommand(this.registry));
+
+        commandManager.registerCommand(new ChatCommand(this.registry));
 
         this.registry.register(CommandModule.class, this);
     }

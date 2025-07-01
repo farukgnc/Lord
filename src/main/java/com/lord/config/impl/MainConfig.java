@@ -18,17 +18,26 @@ public class MainConfig extends Configuration {
     }
 
     @ConfigData("databaseType")
-    private final String databaseType = "mongodb";
+    private String databaseType = "mongodb";
 
     @ConfigData("mongo.connection-string")
-    private final String mongoConnectionString = "mongodb+srv://titan:12345a@titan.e4ojfqr.mongodb.net/?retryWrites=true&w=majority&appName=lord";
+    private String mongoConnectionString = "mongodb+srv://titan:12345a@titan.e4ojfqr.mongodb.net/?retryWrites=true&w=majority&appName=lord";
 
     @ConfigData("mongo.database-name")
-    private final String mongoDatabaseName = "lord";
+    private String mongoDatabaseName = "lord";
 
     @ConfigData("redis.uri")
-    private final String redisUri = "redis://localhost:6379";
+    private String redisUri = "redis://localhost:6379";
 
     @ConfigData("server-id")
-    private final String serverId = "lobby-1";
+    private String serverId = "lobby-1";
+
+    @ConfigData("chat.format")
+    private String chatFormat = "<prefix><gray><player_name></gray><suffix><dark_gray>: <white><message>";
+
+    @ConfigData("chat.spam-filter.enabled")
+    private boolean chatSpamFilterEnabled = true;
+
+    @ConfigData("chat.spam-filter.cooldown-seconds")
+    private double chatSpamFilterCooldown = 3.0;
 }

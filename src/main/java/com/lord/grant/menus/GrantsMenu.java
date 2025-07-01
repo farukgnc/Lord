@@ -9,6 +9,7 @@ import com.lord.menu.components.UIComponent;
 import com.lord.menu.utils.ButtonBuilder;
 import com.lord.grant.GrantCacheService;
 import com.lord.services.ServiceRegistry;
+import com.lord.utils.PlayerResolver;
 import com.lord.utils.TimeUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -19,6 +20,8 @@ import org.bukkit.entity.Player;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class GrantsMenu extends MenuView {
 
@@ -29,6 +32,8 @@ public final class GrantsMenu extends MenuView {
     private final Set<Grant> grants;
     private final ServiceRegistry registry;
     private final Lord plugin;
+    private final Map<UUID, String> nameCache = new ConcurrentHashMap<>();
+    private boolean initialComposition = true;
 
     public GrantsMenu(UUID targetUuid, String targetName, Set<Grant> grants, ServiceRegistry registry) {
         super("Grants: " + targetName, 6);
@@ -40,11 +45,14 @@ public final class GrantsMenu extends MenuView {
 
     @Override
     public Map<Integer, UIComponent> compose(Player viewer) {
-        Map<Integer, UIComponent> components = new HashMap<>();
+        if (initialComposition) {
+            initialComposition = false;
+            loadNamesAndRecompose();
+            return getLoadingView();
+        }
 
-        UIComponent frame = new ButtonBuilder(Material.BLACK_STAINED_GLASS_PANE).name(" ").build();
-        for (int i = 0; i < 9; i++) components.put(i, frame);
-        for (int i = 45; i < 54; i++) components.put(i, frame);
+        Map<Integer, UIComponent> components = new HashMap<>();
+        addFrame(components);
 
         if (grants.isEmpty()) {
             components.put(22, new ButtonBuilder(Material.BARRIER).name("<red>No Grants Found").build());
@@ -63,13 +71,40 @@ public final class GrantsMenu extends MenuView {
         return components;
     }
 
+    private void loadNamesAndRecompose() {
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+        for (Grant grant : grants) {
+            if (grant.getIssuerUuid() != null && !nameCache.containsKey(grant.getIssuerUuid())) {
+                futures.add(
+                        PlayerResolver.resolveName(grant.getIssuerUuid()).thenAccept(nameOpt ->
+                                nameOpt.ifPresent(name -> nameCache.put(grant.getIssuerUuid(), name)))
+                );
+            }
+        }
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                .thenRun(() -> Bukkit.getScheduler().runTask(plugin, this::refresh));
+    }
+
+    private Map<Integer, UIComponent> getLoadingView() {
+        Map<Integer, UIComponent> components = new HashMap<>();
+        addFrame(components);
+        components.put(22, new ButtonBuilder(Material.CLOCK).name("<yellow>Loading grant details...").build());
+        return components;
+    }
+
+    private void addFrame(Map<Integer, UIComponent> components) {
+        UIComponent frame = new ButtonBuilder(Material.BLACK_STAINED_GLASS_PANE).name(" ").build();
+        for (int i = 0; i < 9; i++) components.put(i, frame);
+        for (int i = 45; i < 54; i++) components.put(i, frame);
+    }
+
     private UIComponent createGrantButton(Grant grant, Player viewer) {
         GrantRepository grantRepository = this.registry.get(GrantRepository.class);
 
         String issuerName = "Console";
         if (grant.getIssuerUuid() != null) {
-            // Sadece ismi almak için OfflinePlayer kullanmak güvenlidir.
-            issuerName = Bukkit.getOfflinePlayer(grant.getIssuerUuid()).getName();
+            issuerName = nameCache.getOrDefault(grant.getIssuerUuid(), "Loading...");
         }
 
         String durationString = grant.isPermanent() ? "Permanent" : TimeUtil.formatDuration(grant.getDuration());
@@ -99,18 +134,11 @@ public final class GrantsMenu extends MenuView {
 
                     GrantCacheService grantCacheService = this.registry.get(GrantCacheService.class);
 
-                    // 1. Grant'i asenkron olarak sil.
                     grantRepository.delete(grant).thenRun(() -> {
-                        // 2. Silme işlemi bittiğinde, grant'in sahibinin önbelleğini geçersiz kıl.
                         grantCacheService.invalidate(grant.getGranteeUuid());
-
-                        // 3. Ayrıca, izinlerin yeniden hesaplanması için PlayerDataCache'i de geçersiz kıl.
-                        this.registry.get(PlayerDataCache.class).invalidate(grant.getGranteeUuid());
-
-                        // menu güncellenmesi için
+                        this.registry.get(PlayerDataCache.class).refreshPlayerData(grant.getGranteeUuid());
                         this.grants.remove(grant);
 
-                        // 4. Ana thread'e dönerek kullanıcıya mesaj gönder ve menüyü yenile.
                         Bukkit.getScheduler().runTask(this.plugin, () -> {
                             viewer.sendMessage(Component.text("Grant revoked.", NamedTextColor.GREEN));
                             this.refresh();

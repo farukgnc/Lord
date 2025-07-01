@@ -45,7 +45,7 @@ public final class WarnCommand implements ICommand {
         String targetName = context.arg(0);
         sender.sendMessage(Component.text("Searching for player '" + targetName + "'...", NamedTextColor.YELLOW));
 
-        PlayerResolver.resolve(targetName).thenAcceptAsync(targetUuidOpt -> {
+        PlayerResolver.resolveUUID(targetName).thenAcceptAsync(targetUuidOpt -> {
             Bukkit.getScheduler().runTask(this.plugin, () -> {
                 if (targetUuidOpt.isEmpty()) {
                     sender.sendMessage(Component.text("A player with the name '" + targetName + "' could not be found.", NamedTextColor.RED));

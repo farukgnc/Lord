@@ -48,14 +48,13 @@ public final class GrantConfirmationMenu extends MenuView {
                     );
 
                     grantRepository.save(newGrant).thenRun(() -> {
-                        // 2. Kaydetme işlemi bittiğinde, hedef oyuncunun grant önbelleğini geçersiz kıl.
-                        wizard.getRegistry().get(GrantCacheService.class).invalidate(wizard.getTargetUuid());
-
-                        // 3. Ayrıca, izinlerin yeniden hesaplanması için PlayerDataCache'i de geçersiz kıl.
-                        // Bu, oyuncu online ise anında yeni izinlerini almasını sağlar.
-                        wizard.getRegistry().get(PlayerDataCache.class).invalidate(wizard.getTargetUuid());
-
-                        player.sendMessage(Component.text("Grant successful!", NamedTextColor.GREEN));
+                        // 2. Kaydetme işlemi bittiğinde, oyuncunun önbelleğini SADECE GEÇERSİZ KILMAK YERİNE,
+                        //    doğrudan YENİLE. Bu, oyuncunun sohbete devam edebilmesini sağlar.
+                        wizard.getRegistry().get(PlayerDataCache.class).refreshPlayerData(wizard.getTargetUuid())
+                                .thenRun(() -> {
+                                    // 3. Yenileme de bittikten sonra başarı mesajını gönder.
+                                    player.sendMessage(Component.text("Grant successful! Player data refreshed.", NamedTextColor.GREEN));
+                                });
                     });
 
                     player.closeInventory();

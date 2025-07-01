@@ -53,7 +53,7 @@ public class PunishmentsCommand implements ICommand {
         String targetName = context.arg(0);
         player.sendMessage(Component.text("Searching for player '" + targetName + "'...", NamedTextColor.YELLOW));
 
-        PlayerResolver.resolve(targetName).thenAcceptAsync(targetUuidOpt -> {
+        PlayerResolver.resolveUUID(targetName).thenAcceptAsync(targetUuidOpt -> {
             if (targetUuidOpt.isEmpty()) {
                 runOnMainThread(() -> player.sendMessage(Component.text("Player not found.", NamedTextColor.RED)));
                 return;

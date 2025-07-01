@@ -5,7 +5,7 @@ import com.lord.command.CommandContext;
 import com.lord.command.ICommand;
 import com.lord.command.annotations.Command;
 import com.lord.grant.menus.GrantsMenu;
-import com.lord.grant.repositories.GrantRepository;
+import com.lord.grant.GrantCacheService;
 import com.lord.menu.MenuManager;
 import com.lord.services.ServiceRegistry;
 import com.lord.utils.PlayerResolver;
@@ -28,13 +28,13 @@ public final class GrantsCommand implements ICommand {
     private final ServiceRegistry registry;
     private final Lord plugin;
     private final MenuManager menuManager;
-    private final GrantRepository grantRepository;
+    private final GrantCacheService grantCacheService;
 
     public GrantsCommand(ServiceRegistry registry) {
         this.registry = registry;
         this.plugin = registry.get(Lord.class);
         this.menuManager = registry.get(MenuManager.class);
-        this.grantRepository = registry.get(GrantRepository.class);
+        this.grantCacheService = registry.get(GrantCacheService.class);
     }
 
     @Override
@@ -55,7 +55,7 @@ public final class GrantsCommand implements ICommand {
         player.sendMessage(Component.text("Searching for player '" + targetName + "'...", NamedTextColor.YELLOW));
 
         // 1. Asenkron olarak oyuncunun UUID'sini bul.
-        PlayerResolver.resolve(targetName).thenAcceptAsync(targetUuidOpt -> {
+        PlayerResolver.resolveUUID(targetName).thenAcceptAsync(targetUuidOpt -> {
             if (targetUuidOpt.isEmpty()) {
                 Bukkit.getScheduler().runTask(plugin, () -> player.sendMessage(Component.text("Player not found.", NamedTextColor.RED)));
                 return;
@@ -63,8 +63,8 @@ public final class GrantsCommand implements ICommand {
 
             UUID targetUuid = targetUuidOpt.get();
 
-            // 2. Bulunan UUID ile grant'ları veritabanından asenkron olarak çek.
-            this.grantRepository.findByPlayer(targetUuid).thenAccept(grants -> {
+            // 2. Bulunan UUID ile grant'ları önbellekten (veya gerekirse DB'den) asenkron olarak çek.
+            this.grantCacheService.getGrants(targetUuid).thenAccept(grants -> {
                 // 3. Grant'lar geldiğinde, ana thread'e dönerek menüyü hazır verilerle aç.
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     this.menuManager.open(player, new GrantsMenu(targetUuid, targetName, grants, this.registry));

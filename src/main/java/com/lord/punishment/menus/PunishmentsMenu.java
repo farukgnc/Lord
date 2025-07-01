@@ -9,6 +9,7 @@ import com.lord.punishment.PunishmentStatusFilter;
 import com.lord.punishment.PunishmentType;
 import com.lord.punishment.repositories.PunishmentRepository;
 import com.lord.services.ServiceRegistry;
+import com.lord.utils.PlayerResolver;
 import com.lord.utils.TimeUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -19,6 +20,8 @@ import org.bukkit.entity.Player;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public final class PunishmentsMenu extends MenuView {
@@ -28,34 +31,85 @@ public final class PunishmentsMenu extends MenuView {
 
     private final UUID targetUuid;
     private final String targetName;
-    private final ServiceRegistry registry;
     private final Lord plugin;
     private final PunishmentRepository punishmentRepository;
 
-    // Filtreleme ve sayfalama durumu
     private List<Punishment> elements;
     private int currentPage = 1;
     private final int itemsPerPage = 28;
     private PunishmentStatusFilter statusFilter = PunishmentStatusFilter.ALL;
-    private PunishmentType typeFilter = null; // null = hepsi
+    private PunishmentType typeFilter = null;
+
+    private final Map<UUID, String> nameCache = new ConcurrentHashMap<>();
+    private boolean needsNameLoading = true;
 
     public PunishmentsMenu(UUID targetUuid, String targetName, List<Punishment> initialPunishments, ServiceRegistry registry) {
         super("History: " + targetName, 6);
         this.targetUuid = targetUuid;
         this.targetName = targetName;
         this.elements = initialPunishments;
-        this.registry = registry;
         this.plugin = registry.get(Lord.class);
         this.punishmentRepository = registry.get(PunishmentRepository.class);
     }
 
     @Override
     public Map<Integer, UIComponent> compose(Player viewer) {
+        if (needsNameLoading) {
+            loadNamesAndRecompose();
+            return getLoadingView();
+        }
+
         Map<Integer, UIComponent> components = new HashMap<>();
         int maxPage = (int) Math.ceil((double) elements.size() / itemsPerPage);
         if (maxPage == 0) maxPage = 1;
 
-        // --- Çerçeve ve Kontrol Butonları ---
+        addFrameAndControls(components, maxPage);
+
+        if (elements.isEmpty()) {
+            components.put(22, new ButtonBuilder(Material.BARRIER).name("<red>No Punishments Found").lore("<gray>Try changing the filters.").build());
+        } else {
+            int startIndex = (currentPage - 1) * itemsPerPage;
+            List<Punishment> pageElements = elements.stream().skip(startIndex).limit(itemsPerPage).collect(Collectors.toList());
+
+            int slot = 10;
+            for (Punishment punishment : pageElements) {
+                if (slot == 17 || slot == 26 || slot == 35) slot += 2;
+                if (slot > 43) break;
+                components.put(slot++, convertElement(punishment));
+            }
+        }
+        return components;
+    }
+
+    private void loadNamesAndRecompose() {
+        this.needsNameLoading = true;
+        int startIndex = (currentPage - 1) * itemsPerPage;
+        List<Punishment> pageElements = elements.stream().skip(startIndex).limit(itemsPerPage).collect(Collectors.toList());
+
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+        for (Punishment p : pageElements) {
+            if (p.getIssuerUuid() != null && !nameCache.containsKey(p.getIssuerUuid())) {
+                futures.add(
+                        PlayerResolver.resolveName(p.getIssuerUuid()).thenAccept(nameOpt ->
+                                nameOpt.ifPresent(name -> nameCache.put(p.getIssuerUuid(), name)))
+                );
+            }
+        }
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).thenRun(() -> {
+            this.needsNameLoading = false;
+            Bukkit.getScheduler().runTask(plugin, this::refresh);
+        });
+    }
+
+    private Map<Integer, UIComponent> getLoadingView() {
+        Map<Integer, UIComponent> components = new HashMap<>();
+        addFrameAndControls(components, 1);
+        components.put(22, new ButtonBuilder(Material.CLOCK).name("<yellow>Loading punishment details...").build());
+        return components;
+    }
+
+    private void addFrameAndControls(Map<Integer, UIComponent> components, int maxPage) {
         UIComponent frame = new ButtonBuilder(Material.BLACK_STAINED_GLASS_PANE).name(" ").build();
         for (int i = 0; i < 9; i++) components.put(i, frame);
         for (int i = 45; i < 54; i++) components.put(i, frame);
@@ -66,45 +120,26 @@ public final class PunishmentsMenu extends MenuView {
         if (currentPage > 1) {
             components.put(48, new ButtonBuilder(Material.ARROW).name("<green>Previous Page").onClick(e -> {
                 currentPage--;
+                this.needsNameLoading = true;
                 this.refresh();
             }).build());
         }
         if (currentPage < maxPage) {
             components.put(50, new ButtonBuilder(Material.ARROW).name("<green>Next Page").onClick(e -> {
                 currentPage++;
+                this.needsNameLoading = true;
                 this.refresh();
             }).build());
         }
 
-        // --- Filtre Butonları ---
         components.put(2, createStatusFilterButton());
         components.put(6, createTypeFilterButton());
-
-        // --- İçerik ---
-        if (elements.isEmpty()) {
-            components.put(22, new ButtonBuilder(Material.BARRIER).name("<red>No Punishments Found").lore("<gray>Try changing the filters.").build());
-        } else {
-            int startIndex = (currentPage - 1) * itemsPerPage;
-            List<Punishment> pageElements = elements.stream().skip(startIndex).limit(itemsPerPage).collect(Collectors.toList());
-
-            int slot = 10;
-            for (Punishment punishment : pageElements) {
-                if (slot == 17 || slot == 26 || slot == 35) slot += 2; // Kenar boşlukları
-                if (slot > 43) break;
-                components.put(slot++, convertElement(punishment));
-            }
-        }
-        return components;
     }
 
     private UIComponent createStatusFilterButton() {
         return new ButtonBuilder(Material.COMPARATOR)
                 .name("<aqua>Filter by Status")
-                .lore(
-                        "<gray>Current: <white>" + statusFilter.getDisplayName(),
-                        "",
-                        "<yellow>Click to cycle."
-                )
+                .lore("<gray>Current: <white>" + statusFilter.getDisplayName(), "", "<yellow>Click to cycle.")
                 .onClick(e -> {
                     this.statusFilter = this.statusFilter.next();
                     reloadDataAndRefresh();
@@ -117,42 +152,33 @@ public final class PunishmentsMenu extends MenuView {
 
         return new ButtonBuilder(Material.HOPPER)
                 .name("<aqua>Filter by Type")
-                .lore(
-                        "<gray>Current: <white>" + (typeFilter == null ? "All" : typeFilter.name()),
-                        "",
-                        "<yellow>Click to cycle."
-                )
+                .lore("<gray>Current: <white>" + (typeFilter == null ? "All" : typeFilter.name()), "", "<yellow>Click to cycle.")
                 .onClick(e -> {
                     int nextIndex = currentIndex + 1;
-                    if (nextIndex >= types.size()) {
-                        this.typeFilter = null; // Listenin sonundan sonra "All" durumuna dön
-                    } else {
-                        this.typeFilter = types.get(nextIndex);
-                    }
+                    if (nextIndex >= types.size()) this.typeFilter = null;
+                    else this.typeFilter = types.get(nextIndex);
                     reloadDataAndRefresh();
                 }).build();
     }
 
     private void reloadDataAndRefresh() {
-        if (this.getViewer() != null && this.getViewer().isOnline()) {
-            this.getViewer().sendActionBar(Component.text("Loading history...", NamedTextColor.YELLOW));
+        if (getViewer() != null && getViewer().isOnline()) {
+            getViewer().sendActionBar(Component.text("Loading history...", NamedTextColor.YELLOW));
         }
 
         this.punishmentRepository.findWithFilters(this.targetUuid, this.statusFilter, this.typeFilter)
-                .thenAccept(newElements -> {
-                    Bukkit.getScheduler().runTask(this.plugin, () -> {
-                        this.elements = newElements;
-                        this.currentPage = 1;
-                        this.refresh();
-                    });
-                });
+                .thenAccept(newElements -> Bukkit.getScheduler().runTask(this.plugin, () -> {
+                    this.elements = newElements;
+                    this.currentPage = 1;
+                    this.needsNameLoading = true;
+                    this.refresh();
+                }));
     }
 
     private UIComponent convertElement(Punishment punishment) {
         String issuerName = "Console";
         if (punishment.getIssuerUuid() != null) {
-            // BU KISIM PLAYERRESOLVER OLMALI
-            issuerName = Optional.ofNullable(Bukkit.getOfflinePlayer(punishment.getIssuerUuid()).getName()).orElse("Unknown");
+            issuerName = nameCache.getOrDefault(punishment.getIssuerUuid(), "Loading...");
         }
         String durationString = punishment.isPermanent() ? "Permanent" : TimeUtil.formatDuration(punishment.getDuration());
 
@@ -177,7 +203,9 @@ public final class PunishmentsMenu extends MenuView {
 
         List<String> loreLines = new ArrayList<>();
         loreLines.add("");
-        loreLines.add("<gray>Status: " + statusString);
+        if (punishment.getType() == PunishmentType.BAN || punishment.getType() == PunishmentType.MUTE) {
+            loreLines.add("<gray>Status: " + statusString);
+        }
         loreLines.add("<dark_aqua>▪ <aqua>Punished By: <white>" + issuerName);
         loreLines.add("<dark_aqua>▪ <aqua>Reason: <white>" + punishment.getReason());
         loreLines.add("");

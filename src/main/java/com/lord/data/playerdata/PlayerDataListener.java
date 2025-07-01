@@ -66,7 +66,6 @@ public final class PlayerDataListener implements Listener {
 
             // Hesaplanan veriyi izin önbelleğine koy.
             this.playerDataCache.cacheData(playerUuid, calculatedData);
-
         } catch (Exception e) {
             event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER,
                     Component.text("Your data could not be loaded. Please try again.", NamedTextColor.RED));

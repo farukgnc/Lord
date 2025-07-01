@@ -1,5 +1,6 @@
 package com.lord;
 
+import com.lord.chat.ChatModule;
 import com.lord.command.CommandModule;
 import com.lord.config.impl.MainConfig;
 import com.lord.config.impl.MessageConfig;
@@ -12,16 +13,12 @@ import com.lord.menu.MenuManager;
 import com.lord.module.ModuleManager;
 import com.lord.punishment.PunishmentModule;
 import com.lord.rank.RankModule;
-import com.lord.services.ChatInputManager;
 import com.lord.services.ServiceRegistry;
 import lombok.Getter;
 import org.bukkit.plugin.java.JavaPlugin;
 
 @Getter
 public final class Lord extends JavaPlugin {
-
-    // TODO punishmentsmenu 154
-    // TODO ban punishments menude gözükmüyor
 
     private ServiceRegistry serviceRegistry;
     private ModuleManager moduleManager;
@@ -57,13 +54,13 @@ public final class Lord extends JavaPlugin {
 
         // 2. Düşük seviyeli servisleri ve veri depolarını (repository) kaydet.
         this.serviceRegistry.register(MenuManager.class, new MenuManager(this));
-        this.serviceRegistry.register(ChatInputManager.class, new ChatInputManager(this));
-        this.serviceRegistry.register(PlayerDataCache.class, new PlayerDataCache());
+        this.serviceRegistry.register(PlayerDataCache.class, new PlayerDataCache(this.serviceRegistry));
 
         // 5. Modüllerin yaşam döngüsünü (enable/disable) yönetmek için ModuleManager'a kaydet.
         this.moduleManager = new ModuleManager();
         this.moduleManager.registerModule(new RankModule(this.serviceRegistry));
         this.moduleManager.registerModule(new PunishmentModule(this.serviceRegistry));
+        this.moduleManager.registerModule(new ChatModule(this.serviceRegistry));
         this.moduleManager.registerModule(new CommandModule(this.serviceRegistry));
 
         // 6. Tüm modülleri etkinleştir.

@@ -120,9 +120,10 @@ public final class PunishmentModule implements Module {
 
     @Override
     public void enable() {
-        // Bu modül etkinleştirildiğinde, PunishmentListener'ı da kaydet.
-        Bukkit.getPluginManager().registerEvents(new PunishmentListener(this.registry), this.plugin);
         this.registry.register(PunishmentModule.class, this);
+
+        Bukkit.getPluginManager().registerEvents(new PunishmentListener(this.registry), this.plugin);
+
         System.out.println("[" + getName() + "] module has been enabled and listeners are registered.");
     }
 

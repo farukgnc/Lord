@@ -1,15 +1,25 @@
 package com.lord.data.playerdata;
 
 import com.lord.data.CachedData;
+import com.lord.grant.repositories.GrantRepository;
+import com.lord.services.ServiceRegistry;
 
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class PlayerDataCache {
 
     private final Map<UUID, CachedData> cache = new ConcurrentHashMap<>();
+    private final GrantRepository grantRepository;
+    private final PlayerDataCalculator calculator;
+
+    public PlayerDataCache(ServiceRegistry registry) {
+        this.grantRepository = registry.get(GrantRepository.class);
+        this.calculator = new PlayerDataCalculator(registry);
+    }
 
     /**
      * Bir oyuncunun önceden yüklenmiş ve hesaplanmış verilerini önbellekten alır.
@@ -38,5 +48,23 @@ public final class PlayerDataCache {
      */
     public void invalidate(UUID playerUuid) {
         this.cache.remove(playerUuid);
+    }
+
+    /**
+     * --- YENİ VE KRİTİK METOT ---
+     * Bir oyuncunun verilerini veritabanından çekerek önbelleği asenkron olarak yeniler.
+     * Bu, bir oyuncunun grant'ları veya cezaları değiştiğinde çağrılır.
+     * @param playerUuid Verileri yenilenecek oyuncunun UUID'si.
+     * @return Yenileme işlemi tamamlandığında sona erecek bir CompletableFuture.
+     */
+    public CompletableFuture<Void> refreshPlayerData(UUID playerUuid) {
+        // 1. Oyuncunun en güncel grant'larını veritabanından çek.
+        return this.grantRepository.findByPlayer(playerUuid)
+                .thenAcceptAsync(grants -> {
+                    // 2. Gelen grant'larla veriyi yeniden hesapla.
+                    CachedData newCachedData = this.calculator.calculate(grants);
+                    // 3. Hesaplanan taze veriyi önbelleğe koy.
+                    this.cacheData(playerUuid, newCachedData);
+                });
     }
 }

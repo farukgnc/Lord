@@ -1,12 +1,12 @@
 package com.lord.rank.menus.editor;
 
+import com.lord.chat.ChatService;
 import com.lord.menu.ConfirmationMenu;
 import com.lord.menu.MenuView;
 import com.lord.menu.components.UIComponent;
 import com.lord.menu.utils.ButtonBuilder;
 import com.lord.rank.Rank;
 import com.lord.rank.repositories.RankRepository;
-import com.lord.services.ChatInputManager;
 import com.lord.services.ServiceRegistry;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -64,12 +64,12 @@ public final class RankEditorMenu extends MenuView {
                 .lore("<gray>Current: <yellow>" + this.rank.getPriority(), "", "<yellow>Click to change the priority.")
                 .onClick(event -> {
                     Player viewer = (Player) event.getWhoClicked();
-                    ChatInputManager inputManager = registry.get(ChatInputManager.class);
+                    ChatService chatService = registry.get(ChatService.class);
 
                     viewer.closeInventory();
                     viewer.sendMessage(Component.text("Please type the new priority in chat.", NamedTextColor.GREEN));
 
-                    inputManager.prompt(viewer, input -> {
+                    chatService.prompt(viewer, input -> {
                         try {
                             int newPriority = Integer.parseInt(input);
                             this.rank.setPriority(newPriority);
@@ -163,12 +163,12 @@ public final class RankEditorMenu extends MenuView {
 
     private void promptForText(String property, java.util.function.BiConsumer<Player, String> onResult) {
         Player viewer = this.getViewer();
-        ChatInputManager inputManager = registry.get(ChatInputManager.class);
+        ChatService chatService = registry.get(ChatService.class);
 
         viewer.closeInventory();
         viewer.sendMessage(Component.text("Please type the new " + property + " in chat. Use 'none' to remove.", NamedTextColor.GREEN));
 
-        inputManager.prompt(viewer, input -> {
+        chatService.prompt(viewer, input -> {
             onResult.accept(viewer, input.equalsIgnoreCase("none") ? null : input);
         });
     }
