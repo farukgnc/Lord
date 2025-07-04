@@ -2,6 +2,8 @@ package com.lord.punishment;
 
 import com.lord.Lord;
 import com.lord.module.Module;
+import com.lord.punishment.enums.PunishmentStatusFilter;
+import com.lord.punishment.enums.PunishmentType;
 import com.lord.punishment.repositories.PunishmentRepository;
 import com.lord.services.ServiceRegistry;
 import com.lord.utils.TimeUtil;
@@ -30,6 +32,25 @@ public final class PunishmentModule implements Module {
         this.plugin = registry.get(Lord.class);
         this.punishmentRepository = registry.get(PunishmentRepository.class);
         this.punishmentCacheService = registry.get(PunishmentCacheService.class);
+    }
+
+    @Override
+    public void enable() {
+        this.registry.register(PunishmentModule.class, this);
+
+        Bukkit.getPluginManager().registerEvents(new PunishmentListener(this.registry), this.plugin);
+
+        System.out.println("[" + getName() + "] module has been enabled and listeners are registered.");
+    }
+
+    @Override
+    public void disable() {
+        this.registry.unregister(PunishmentModule.class);
+    }
+
+    @Override
+    public String getName() {
+        return "Punishment";
     }
 
     public void executePunishment(PunishmentType type, UUID targetUuid, String targetName, CommandSender issuer, Duration duration, String reason) {
@@ -116,24 +137,5 @@ public final class PunishmentModule implements Module {
 
     private void runOnMainThread(Runnable task) {
         Bukkit.getScheduler().runTask(this.plugin, task);
-    }
-
-    @Override
-    public void enable() {
-        this.registry.register(PunishmentModule.class, this);
-
-        Bukkit.getPluginManager().registerEvents(new PunishmentListener(this.registry), this.plugin);
-
-        System.out.println("[" + getName() + "] module has been enabled and listeners are registered.");
-    }
-
-    @Override
-    public void disable() {
-        this.registry.unregister(PunishmentModule.class);
-    }
-
-    @Override
-    public String getName() {
-        return "Punishment";
     }
 }

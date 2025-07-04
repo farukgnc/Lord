@@ -1,8 +1,8 @@
 package com.lord.punishment.repositories.impl;
 
 import com.lord.punishment.Punishment;
-import com.lord.punishment.PunishmentStatusFilter;
-import com.lord.punishment.PunishmentType;
+import com.lord.punishment.enums.PunishmentStatusFilter;
+import com.lord.punishment.enums.PunishmentType;
 import com.lord.punishment.repositories.PunishmentRepository;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;

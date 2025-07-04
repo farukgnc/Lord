@@ -1,4 +1,4 @@
-package com.lord.punishment;
+package com.lord.punishment.enums;
 
 public enum PunishmentStatusFilter {
     ALL("All"),

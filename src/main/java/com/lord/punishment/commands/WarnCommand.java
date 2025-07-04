@@ -5,7 +5,7 @@ import com.lord.command.CommandContext;
 import com.lord.command.ICommand;
 import com.lord.command.annotations.Command;
 import com.lord.punishment.PunishmentModule;
-import com.lord.punishment.PunishmentType;
+import com.lord.punishment.enums.PunishmentType;
 import com.lord.services.ServiceRegistry;
 import com.lord.utils.PlayerResolver;
 import net.kyori.adventure.text.Component;

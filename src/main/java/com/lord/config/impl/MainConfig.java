@@ -26,8 +26,14 @@ public class MainConfig extends Configuration {
     @ConfigData("mongo.database-name")
     private String mongoDatabaseName = "lord";
 
-    @ConfigData("redis.uri")
-    private String redisUri = "redis://localhost:6379";
+    @ConfigData("redis.host")
+    private String redisHost = "localhost";
+
+    @ConfigData("redis.port")
+    private int redisPort = 6379;
+
+    @ConfigData("redis.password")
+    private String redisPassword = "";
 
     @ConfigData("server-id")
     private String serverId = "lobby-1";

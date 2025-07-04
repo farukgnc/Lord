@@ -1,4 +1,4 @@
-package com.lord.punishment;
+package com.lord.punishment.enums;
 
 import lombok.Getter;
 

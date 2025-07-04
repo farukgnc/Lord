@@ -1,6 +1,7 @@
 package com.lord.punishment;
 
 import com.lord.Lord;
+import com.lord.punishment.enums.PunishmentType;
 import com.lord.services.ServiceRegistry;
 import com.lord.utils.TimeUtil;
 import net.kyori.adventure.text.Component;

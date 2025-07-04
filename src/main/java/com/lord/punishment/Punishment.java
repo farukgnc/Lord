@@ -1,5 +1,6 @@
 package com.lord.punishment;
 
+import com.lord.punishment.enums.PunishmentType;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
