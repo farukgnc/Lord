@@ -64,10 +64,10 @@ public final class Lord extends JavaPlugin {
 
         this.serviceRegistry.register(Redis.class, this.redis);
         this.serviceRegistry.register(RedisSyncService.class, new RedisSyncService(this.serviceRegistry));
-        this.serviceRegistry.register(RedisBroadcastService.class, new RedisBroadcastService(this.serviceRegistry));*/
+        this.serviceRegistry.register(RedisBroadcastService.class, new RedisBroadcastService(this.serviceRegistry));
 
         // BroadcastListener'ı başlat
-        new BroadcastListener(this.serviceRegistry);
+        new BroadcastListener(this.serviceRegistry);*/
 
         // 2. Düşük seviyeli servisleri ve veri depolarını (repository) kaydet.
         this.serviceRegistry.register(MenuManager.class, new MenuManager(this));
