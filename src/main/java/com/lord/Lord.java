@@ -13,10 +13,6 @@ import com.lord.menu.MenuManager;
 import com.lord.module.ModuleManager;
 import com.lord.punishment.PunishmentModule;
 import com.lord.rank.RankModule;
-import com.lord.redis.Redis;
-import com.lord.redis.messaging.broadcast.BroadcastListener;
-import com.lord.redis.sync.RedisBroadcastService;
-import com.lord.redis.sync.RedisSyncService;
 import com.lord.services.ServiceRegistry;
 import lombok.Getter;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -29,7 +25,6 @@ public final class Lord extends JavaPlugin {
     private ServiceRegistry serviceRegistry;
     private ModuleManager moduleManager;
     private RepositoryFactory repositoryFactory;
-    private Redis redis;
 
     @Override
     public void onEnable() {
@@ -58,16 +53,6 @@ public final class Lord extends JavaPlugin {
         }
 
         repositoryFactory.createRepositories().join(); // bunu da bloklamak zorundayız
-
-        /*this.redis = new Redis(this.serviceRegistry, this.getLogger());
-        this.redis.connect().join();
-
-        this.serviceRegistry.register(Redis.class, this.redis);
-        this.serviceRegistry.register(RedisSyncService.class, new RedisSyncService(this.serviceRegistry));
-        this.serviceRegistry.register(RedisBroadcastService.class, new RedisBroadcastService(this.serviceRegistry));
-
-        // BroadcastListener'ı başlat
-        new BroadcastListener(this.serviceRegistry);*/
 
         // 2. Düşük seviyeli servisleri ve veri depolarını (repository) kaydet.
         this.serviceRegistry.register(MenuManager.class, new MenuManager(this));
@@ -99,10 +84,6 @@ public final class Lord extends JavaPlugin {
 
         if (this.repositoryFactory != null) {
             this.repositoryFactory.disconnect();
-        }
-
-        if (this.redis != null) {
-            this.redis.disconnect();
         }
 
         getLogger().info("Lord Core eklentisi başarıyla devre dışı bırakıldı.");
