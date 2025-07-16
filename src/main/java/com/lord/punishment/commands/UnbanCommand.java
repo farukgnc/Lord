@@ -4,7 +4,7 @@ import com.lord.Lord;
 import com.lord.command.CommandContext;
 import com.lord.command.ICommand;
 import com.lord.command.annotations.Command;
-import com.lord.punishment.PunishmentModule;
+import com.lord.punishment.PunishmentService;
 import com.lord.punishment.enums.PunishmentType;
 import com.lord.services.ServiceRegistry;
 import com.lord.utils.PlayerResolver;
@@ -23,11 +23,11 @@ import java.util.UUID;
 )
 public final class UnbanCommand implements ICommand {
 
-    private final PunishmentModule punishmentModule;
+    private final PunishmentService punishmentService;
     private final Lord plugin;
 
     public UnbanCommand(ServiceRegistry registry) {
-        this.punishmentModule = registry.get(PunishmentModule.class);
+        this.punishmentService = registry.get(PunishmentService.class);
         this.plugin = registry.get(Lord.class);
     }
 
@@ -50,7 +50,7 @@ public final class UnbanCommand implements ICommand {
                 }
 
                 UUID targetUuid = targetUuidOpt.get();
-                this.punishmentModule.pardonPunishment(PunishmentType.BAN, targetUuid, targetName, sender);
+                this.punishmentService.pardonPunishment(PunishmentType.BAN, targetUuid, targetName, sender);
             });
         });
     }

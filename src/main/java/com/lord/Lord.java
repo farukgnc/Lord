@@ -9,10 +9,12 @@ import com.lord.data.playerdata.PlayerDataListener;
 import com.lord.factory.InMemoryRepositoryFactory;
 import com.lord.factory.MongoRepositoryFactory;
 import com.lord.factory.RepositoryFactory;
+import com.lord.grant.GrantModule;
 import com.lord.menu.MenuManager;
 import com.lord.module.ModuleManager;
 import com.lord.punishment.PunishmentModule;
 import com.lord.rank.RankModule;
+import com.lord.redis.RedisModule;
 import com.lord.services.ServiceRegistry;
 import lombok.Getter;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -20,7 +22,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 @Getter
 public final class Lord extends JavaPlugin {
 
-    //TODO punishmentModule:48
+    // TODO punishmentModule:48
+    // TODO redis sistemi bağlandı fakat mesajı okuyan serverlar gerekli işlemleri yapmıyor
+    // o kısımlar redis.sync paketi içinde
 
     private ServiceRegistry serviceRegistry;
     private ModuleManager moduleManager;
@@ -60,7 +64,9 @@ public final class Lord extends JavaPlugin {
 
         // 5. Modüllerin yaşam döngüsünü (enable/disable) yönetmek için ModuleManager'a kaydet.
         this.moduleManager = new ModuleManager();
+        this.moduleManager.registerModule(new RedisModule(this.serviceRegistry));
         this.moduleManager.registerModule(new RankModule(this.serviceRegistry));
+        this.moduleManager.registerModule(new GrantModule(this.serviceRegistry));
         this.moduleManager.registerModule(new PunishmentModule(this.serviceRegistry));
         this.moduleManager.registerModule(new ChatModule(this.serviceRegistry));
         this.moduleManager.registerModule(new CommandModule(this.serviceRegistry));

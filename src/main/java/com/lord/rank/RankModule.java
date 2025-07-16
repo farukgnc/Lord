@@ -1,16 +1,14 @@
 package com.lord.rank;
 
 import com.lord.module.Module;
-import com.lord.rank.exceptions.RankAlreadyExistsException;
 import com.lord.rank.repositories.RankRepository;
 import com.lord.services.ServiceRegistry;
-
-import java.util.Set;
 
 public final class RankModule implements Module {
 
     private final ServiceRegistry registry;
     private final RankRepository rankRepository;
+    private RankService rankService;
 
     public RankModule(ServiceRegistry registry) {
         this.registry = registry;
@@ -20,17 +18,16 @@ public final class RankModule implements Module {
     @Override
     public void enable() {
         System.out.println("[" + getName() + "] module has been enabled.");
+        
+        // Initialize and register the rank service
+        this.rankService = new RankService(registry);
+        this.registry.register(RankService.class, rankService);
 
-        // `RankRepository`'nin yüklenmesi artık `MongoRepositoryFactory` içinde
-        // ve Lord.java'daki .join() ile senkronize edildiği için,
-        // bu noktada rank'ların bellekte olduğundan eminiz.
-
-        // Şimdi, veritabanının boş olup olmadığını ASENKRON olarak kontrol et.
-        this.rankRepository.isEmpty().thenAccept(empty -> {
+        // Check if database is empty and create default ranks if needed
+        this.rankService.isEmpty().thenAccept(empty -> {
             if (empty) {
-                // Eğer veritabanı tamamen boşsa, varsayılan rank'ları oluştur.
                 System.out.println("[" + getName() + "] No ranks found in data source, creating default ranks...");
-                createDefaultRanks();
+                rankService.createDefaultRanks();
             } else {
                 System.out.println("[" + getName() + "] Ranks were loaded successfully from data source.");
             }
@@ -42,39 +39,11 @@ public final class RankModule implements Module {
     @Override
     public void disable() {
         this.registry.unregister(RankModule.class);
+        this.registry.unregister(RankService.class);
     }
 
     @Override
     public String getName() {
         return "Rank";
-    }
-
-    private void createDefaultRanks() {
-        try {
-            // createRank metodu zaten var olup olmadığını kontrol ettiği için,
-            // bizim burada tekrar if bloğu ile kontrol etmemize gerek kalmadı.
-            createRank("default", 1, "[Player]", null, Set.of());
-            createRank("mod", 100, "<gray>[Mod]", null, Set.of("default"));
-            createRank("admin", 200, "<red>[Admin]", null, Set.of("mod"));
-            createRank("owner", 999, "<dark_red>[Owner]", null, Set.of("admin"));
-        } catch (RankAlreadyExistsException e) {
-            // Sunucu yeniden başlatıldığında veya reload atıldığında bu rütbeler zaten var olacaktır.
-            // Bu beklenen bir durum olduğu için, bu hatayı görmezden geliyoruz ve konsolu kirletmiyoruz.
-        }
-    }
-
-    public Rank createRank(String name, int priority, String prefix, String suffix, Set<String> parents) throws RankAlreadyExistsException {
-        if (this.rankRepository.findByName(name).isPresent()) {
-            throw new RankAlreadyExistsException("A rank with name " + name + " already exists.");
-        }
-
-        Rank newRank = new Rank(name);
-        newRank.setPriority(priority);
-        if (prefix != null) newRank.setPrefix(prefix);
-        if (suffix != null) newRank.setSuffix(suffix);
-        if (parents != null) newRank.getParentRankNames().addAll(parents);
-
-        this.rankRepository.save(newRank);
-        return newRank;
     }
 }

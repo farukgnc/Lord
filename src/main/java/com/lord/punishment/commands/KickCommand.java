@@ -3,7 +3,7 @@ package com.lord.punishment.commands;
 import com.lord.command.CommandContext;
 import com.lord.command.ICommand;
 import com.lord.command.annotations.Command;
-import com.lord.punishment.PunishmentModule;
+import com.lord.punishment.PunishmentService;
 import com.lord.punishment.enums.PunishmentType;
 import com.lord.services.ServiceRegistry;
 import net.kyori.adventure.text.Component;
@@ -24,10 +24,10 @@ import java.util.stream.Collectors;
 )
 public final class KickCommand implements ICommand {
 
-    private final PunishmentModule punishmentModule;
+    private final PunishmentService punishmentService;
 
     public KickCommand(ServiceRegistry registry) {
-        this.punishmentModule = registry.get(PunishmentModule.class);
+        this.punishmentService = registry.get(PunishmentService.class);
     }
 
     @Override
@@ -51,6 +51,6 @@ public final class KickCommand implements ICommand {
                     .collect(Collectors.joining(" "));
         }
 
-        this.punishmentModule.executePunishment(PunishmentType.KICK, target.getUniqueId(), target.getName(), sender, Duration.ZERO, reason);
+        this.punishmentService.executePunishment(PunishmentType.KICK, target.getUniqueId(), target.getName(), sender, Duration.ZERO, reason);
     }
 }

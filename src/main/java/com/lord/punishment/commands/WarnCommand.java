@@ -4,7 +4,7 @@ import com.lord.Lord;
 import com.lord.command.CommandContext;
 import com.lord.command.ICommand;
 import com.lord.command.annotations.Command;
-import com.lord.punishment.PunishmentModule;
+import com.lord.punishment.PunishmentService;
 import com.lord.punishment.enums.PunishmentType;
 import com.lord.services.ServiceRegistry;
 import com.lord.utils.PlayerResolver;
@@ -26,11 +26,11 @@ import java.util.stream.Collectors;
 )
 public final class WarnCommand implements ICommand {
 
-    private final PunishmentModule punishmentModule;
+    private final PunishmentService punishmentService;
     private final Lord plugin;
 
     public WarnCommand(ServiceRegistry registry) {
-        this.punishmentModule = registry.get(PunishmentModule.class);
+        this.punishmentService = registry.get(PunishmentService.class);
         this.plugin = registry.get(Lord.class);
     }
 
@@ -59,7 +59,7 @@ public final class WarnCommand implements ICommand {
                             .collect(Collectors.joining(" "));
                 }
 
-                this.punishmentModule.executePunishment(PunishmentType.WARN, targetUuid, targetName, sender, Duration.ZERO, reason);
+                this.punishmentService.executePunishment(PunishmentType.WARN, targetUuid, targetName, sender, Duration.ZERO, reason);
             });
         });
     }

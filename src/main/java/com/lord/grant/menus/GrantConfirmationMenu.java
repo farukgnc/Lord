@@ -1,12 +1,9 @@
 package com.lord.grant.menus;
 
-import com.lord.data.playerdata.PlayerDataCache;
-import com.lord.grant.Grant;
-import com.lord.grant.repositories.GrantRepository;
+import com.lord.grant.GrantService;
 import com.lord.menu.MenuView;
 import com.lord.menu.components.UIComponent;
 import com.lord.menu.utils.ButtonBuilder;
-import com.lord.grant.GrantCacheService;
 import com.lord.utils.TimeUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -37,24 +34,19 @@ public final class GrantConfirmationMenu extends MenuView {
                         "<gray>Click to confirm and grant the rank."
                 )
                 .onClick(event -> {
-                    GrantRepository grantRepository = wizard.getRegistry().get(GrantRepository.class);
-                    UUID issuerUuid = wizard.getIssuer().getUniqueId();
-
-                    Grant newGrant = new Grant(
-                            wizard.getTargetUuid(),
-                            wizard.getSelectedRank().getName(),
-                            issuerUuid,
-                            wizard.getSelectedDuration()
-                    );
-
-                    grantRepository.save(newGrant).thenRun(() -> {
-                        // 2. Kaydetme işlemi bittiğinde, oyuncunun önbelleğini SADECE GEÇERSİZ KILMAK YERİNE,
-                        //    doğrudan YENİLE. Bu, oyuncunun sohbete devam edebilmesini sağlar.
-                        wizard.getRegistry().get(PlayerDataCache.class).refreshPlayerData(wizard.getTargetUuid())
-                                .thenRun(() -> {
-                                    // 3. Yenileme de bittikten sonra başarı mesajını gönder.
-                                    player.sendMessage(Component.text("Grant successful! Player data refreshed.", NamedTextColor.GREEN));
-                                });
+                    GrantService grantService = wizard.getRegistry().get(GrantService.class);
+                    
+                    grantService.createGrant(
+                        wizard.getTargetUuid(),
+                        wizard.getTargetName(),
+                        wizard.getSelectedRank().getName(),
+                        wizard.getIssuer(),
+                        wizard.getSelectedDuration()
+                    ).thenAccept(grant -> {
+                        player.sendMessage(Component.text("Grant created successfully!", NamedTextColor.GREEN));
+                    }).exceptionally(throwable -> {
+                        player.sendMessage(Component.text("Failed to create grant: " + throwable.getMessage(), NamedTextColor.RED));
+                        return null;
                     });
 
                     player.closeInventory();
