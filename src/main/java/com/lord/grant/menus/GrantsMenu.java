@@ -3,12 +3,11 @@ package com.lord.grant.menus;
 import com.lord.Lord;
 import com.lord.data.playerdata.PlayerDataCache;
 import com.lord.grant.Grant;
-import com.lord.grant.repositories.GrantRepository;
+import com.lord.grant.GrantService;
 import com.lord.menu.MenuView;
 import com.lord.menu.components.UIComponent;
 import com.lord.menu.utils.ButtonBuilder;
-import com.lord.grant.GrantCacheService;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 import com.lord.utils.PlayerResolver;
 import com.lord.utils.TimeUtil;
 import net.kyori.adventure.text.Component;
@@ -100,7 +99,7 @@ public final class GrantsMenu extends MenuView {
     }
 
     private UIComponent createGrantButton(Grant grant, Player viewer) {
-        GrantRepository grantRepository = this.registry.get(GrantRepository.class);
+        GrantService grantService = this.registry.get(GrantService.class);
 
         String issuerName = "Console";
         if (grant.getIssuerUuid() != null) {
@@ -132,18 +131,14 @@ public final class GrantsMenu extends MenuView {
                 .onClick(event -> {
                     if (!event.getClick().isRightClick()) return;
 
-                    GrantCacheService grantCacheService = this.registry.get(GrantCacheService.class);
-
-                    grantRepository.delete(grant).thenRun(() -> {
-                        grantCacheService.invalidate(grant.getGranteeUuid());
-                        this.registry.get(PlayerDataCache.class).refreshPlayerData(grant.getGranteeUuid());
-                        this.grants.remove(grant);
-
-                        Bukkit.getScheduler().runTask(this.plugin, () -> {
-                            viewer.sendMessage(Component.text("Grant revoked.", NamedTextColor.GREEN));
-                            this.refresh();
+                    // Use GrantService to remove the grant properly
+                    grantService.removeGrant(grant.getUniqueId(), grant.getGranteeUuid(), this.targetName, viewer)
+                        .thenAccept(success -> {
+                            if (success) {
+                                this.grants.remove(grant);
+                                Bukkit.getScheduler().runTask(this.plugin, this::refresh);
+                            }
                         });
-                    });
                 });
 
         if(grant.isActive()) {

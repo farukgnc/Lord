@@ -2,10 +2,8 @@ package com.lord.chat;
 
 import com.lord.config.impl.MainConfig;
 import com.lord.data.playerdata.PlayerDataCache;
-import com.lord.services.ServiceRegistry;
-import io.papermc.paper.chat.ChatRenderer;
+import com.lord.service.ServiceRegistry;
 import io.papermc.paper.event.player.AsyncChatEvent;
-import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -15,7 +13,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.jetbrains.annotations.NotNull;
 
 public final class ChatListener implements Listener {
 

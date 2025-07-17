@@ -30,13 +30,15 @@ public final class InMemoryRankRepository implements RankRepository {
     }
 
     @Override
-    public void save(Rank rank) {
+    public CompletableFuture<Boolean> save(Rank rank) {
         this.ranks.put(rank.getName().toLowerCase(), rank);
+        return CompletableFuture.completedFuture(true);
     }
 
     @Override
-    public void delete(String name) {
+    public CompletableFuture<Boolean> delete(String name) {
         this.ranks.remove(name.toLowerCase());
+        return CompletableFuture.completedFuture(true);
     }
 
     @Override

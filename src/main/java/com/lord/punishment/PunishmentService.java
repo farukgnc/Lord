@@ -5,7 +5,7 @@ import com.lord.punishment.enums.PunishmentStatusFilter;
 import com.lord.punishment.enums.PunishmentType;
 import com.lord.punishment.repositories.PunishmentRepository;
 import com.lord.redis.sync.PunishmentSyncService;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 import com.lord.utils.TimeUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -22,16 +22,16 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class PunishmentService {
-    
-    private final ServiceRegistry registry;
+
+    private final Lord plugin;
+
     private final PunishmentRepository punishmentRepository;
     private final PunishmentCacheService punishmentCacheService;
-    private final Lord plugin;
     private PunishmentSyncService punishmentSyncService;
     
     public PunishmentService(ServiceRegistry registry) {
-        this.registry = registry;
         this.plugin = registry.get(Lord.class);
+
         this.punishmentRepository = registry.get(PunishmentRepository.class);
         this.punishmentCacheService = registry.get(PunishmentCacheService.class);
         

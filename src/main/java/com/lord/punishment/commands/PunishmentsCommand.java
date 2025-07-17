@@ -7,7 +7,7 @@ import com.lord.command.annotations.Command;
 import com.lord.menu.MenuManager;
 import com.lord.punishment.PunishmentCacheService;
 import com.lord.punishment.menus.PunishmentsMenu;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 import com.lord.utils.PlayerResolver;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;

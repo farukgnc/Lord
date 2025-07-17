@@ -28,32 +28,42 @@ public final class InMemoryGrantRepository implements GrantRepository {
     }
 
     @Override
-    public CompletableFuture<Void> save(Grant grant) {
-        this.grantsById.put(grant.getUniqueId(), grant);
-
-        // Şimdi oyuncu indeksini güncelle.
-        // computeIfAbsent: Eğer oyuncu için bir Set yoksa, yeni bir tane oluşturur.
-        Set<Grant> playerGrants = this.grantsByPlayer.computeIfAbsent(grant.getGranteeUuid(), k -> ConcurrentHashMap.newKeySet());
-
-        playerGrants.remove(grant);
-        playerGrants.add(grant);
-
-        return null;
+    public CompletableFuture<Boolean> save(Grant grant) {
+        try {
+            this.grantsById.put(grant.getUniqueId(), grant);
+    
+            // Şimdi oyuncu indeksini güncelle.
+            // computeIfAbsent: Eğer oyuncu için bir Set yoksa, yeni bir tane oluşturur.
+            Set<Grant> playerGrants = this.grantsByPlayer.computeIfAbsent(grant.getGranteeUuid(), k -> ConcurrentHashMap.newKeySet());
+    
+            playerGrants.remove(grant);
+            playerGrants.add(grant);
+    
+            return CompletableFuture.completedFuture(true);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return CompletableFuture.completedFuture(false);
+        }
     }
 
     @Override
-    public CompletableFuture<Void> delete(Grant grant) {
-        this.grantsById.remove(grant.getUniqueId());
-
-        Set<Grant> playerGrants = this.grantsByPlayer.get(grant.getGranteeUuid());
-        if (playerGrants != null) {
-            playerGrants.remove(grant);
-
-            if (playerGrants.isEmpty()) {
-                this.grantsByPlayer.remove(grant.getGranteeUuid());
+    public CompletableFuture<Boolean> delete(Grant grant) {
+        try {
+            this.grantsById.remove(grant.getUniqueId());
+    
+            Set<Grant> playerGrants = this.grantsByPlayer.get(grant.getGranteeUuid());
+            if (playerGrants != null) {
+                playerGrants.remove(grant);
+    
+                if (playerGrants.isEmpty()) {
+                    this.grantsByPlayer.remove(grant.getGranteeUuid());
+                }
             }
+    
+            return CompletableFuture.completedFuture(true);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return CompletableFuture.completedFuture(false);
         }
-
-        return null;
     }
 }

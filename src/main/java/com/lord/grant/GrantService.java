@@ -3,7 +3,8 @@ package com.lord.grant;
 import com.lord.data.playerdata.PlayerDataCache;
 import com.lord.grant.repositories.GrantRepository;
 import com.lord.redis.sync.GrantSyncService;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
+import com.lord.utils.TimeUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -18,15 +19,13 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class GrantService {
-    
-    private final ServiceRegistry registry;
+
     private final GrantRepository grantRepository;
     private final GrantCacheService grantCacheService;
     private final PlayerDataCache playerDataCache;
     private GrantSyncService grantSyncService;
     
     public GrantService(ServiceRegistry registry) {
-        this.registry = registry;
         this.grantRepository = registry.get(GrantRepository.class);
         this.grantCacheService = registry.get(GrantCacheService.class);
         this.playerDataCache = registry.get(PlayerDataCache.class);
@@ -49,7 +48,10 @@ public class GrantService {
         UUID issuerUuid = (issuer instanceof Player p) ? p.getUniqueId() : null;
         Grant newGrant = new Grant(targetUuid, rankName, issuerUuid, duration);
         
-        return grantRepository.save(newGrant).thenApply(savedGrant -> {
+        return grantRepository.save(newGrant).thenApply(success -> {
+            // Invalidate the grant cache for this player
+            grantCacheService.invalidate(targetUuid);
+            
             // Broadcast grant creation to other servers via Redis
             if (grantSyncService != null) {
                 grantSyncService.broadcastGrantCreate(newGrant);
@@ -59,7 +61,7 @@ public class GrantService {
             playerDataCache.refreshPlayerData(targetUuid).thenRun(() -> {
                 // Send success message
                 String issuerName = (issuer instanceof Player) ? issuer.getName() : "Console";
-                String durationStr = duration.isZero() ? "permanently" : "for " + formatDuration(duration);
+                String durationStr = duration.isZero() ? "permanently" : "for " + TimeUtil.formatDuration(duration);
                 
                 Component message = MiniMessage.miniMessage().deserialize(
                     "<green><b>GRANT</b></green> <gray>»</gray> <white><target></white> was granted <yellow><rank></yellow> <duration> by <white><issuer></white>.",
@@ -88,8 +90,11 @@ public class GrantService {
             
             Grant grant = grantOpt.get();
             
-            return grantRepository.delete(grantId).thenApply(success -> {
+            return grantRepository.delete(grant).thenApply(success -> {
                 if (success) {
+                    // Invalidate the grant cache for this player
+                    grantCacheService.invalidate(targetUuid);
+                    
                     // Broadcast grant deletion to other servers via Redis
                     if (grantSyncService != null) {
                         grantSyncService.broadcastGrantDelete(grantId, targetUuid);
@@ -146,22 +151,5 @@ public class GrantService {
      */
     public void invalidateCache(UUID playerUuid) {
         grantCacheService.invalidate(playerUuid);
-    }
-    
-    private String formatDuration(Duration duration) {
-        if (duration.isZero()) {
-            return "permanently";
-        }
-        
-        long days = duration.toDays();
-        long hours = duration.toHours() % 24;
-        long minutes = duration.toMinutes() % 60;
-        
-        StringBuilder sb = new StringBuilder();
-        if (days > 0) sb.append(days).append("d ");
-        if (hours > 0) sb.append(hours).append("h ");
-        if (minutes > 0) sb.append(minutes).append("m");
-        
-        return sb.toString().trim();
     }
 }

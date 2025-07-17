@@ -5,7 +5,7 @@ import com.lord.command.ICommand;
 import com.lord.command.annotations.Command;
 import com.lord.menu.MenuManager;
 import com.lord.rank.menus.RankDashboardMenu;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;

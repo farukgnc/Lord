@@ -6,7 +6,7 @@ import com.lord.data.PermissionData;
 import com.lord.grant.Grant;
 import com.lord.rank.Rank;
 import com.lord.rank.repositories.RankRepository;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 
 import java.util.*;
 import java.util.stream.Collectors;

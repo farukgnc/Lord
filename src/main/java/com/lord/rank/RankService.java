@@ -3,7 +3,7 @@ package com.lord.rank;
 import com.lord.rank.exceptions.RankAlreadyExistsException;
 import com.lord.rank.repositories.RankRepository;
 import com.lord.redis.sync.RankSyncService;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -17,13 +17,11 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 public class RankService {
-    
-    private final ServiceRegistry registry;
+
     private final RankRepository rankRepository;
     private RankSyncService rankSyncService;
     
     public RankService(ServiceRegistry registry) {
-        this.registry = registry;
         this.rankRepository = registry.get(RankRepository.class);
         
         // Initialize Redis sync service if available
@@ -159,7 +157,7 @@ public class RankService {
      * Gets all ranks
      */
     public Set<Rank> getAllRanks() {
-        return rankRepository.findAll();
+        return rankRepository.getAllRanks();
     }
     
     /**

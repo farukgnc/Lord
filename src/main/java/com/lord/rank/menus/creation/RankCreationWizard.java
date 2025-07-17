@@ -2,9 +2,9 @@ package com.lord.rank.menus.creation;
 
 import com.lord.chat.ChatService;
 import com.lord.menu.MenuManager;
-import com.lord.rank.RankModule;
+import com.lord.rank.RankService;
 import com.lord.rank.exceptions.RankAlreadyExistsException;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -22,9 +22,13 @@ import java.util.stream.Collectors;
 @Getter
 public final class RankCreationWizard {
 
-    private final ServiceRegistry registry;
     private final Player issuer;
+
+    private final ServiceRegistry registry;
+
     private final ChatService chatService;
+    private final RankService rankService;
+    private final MenuManager menuManager;
 
     // Data collected throughout the wizard
     private String name;
@@ -34,9 +38,11 @@ public final class RankCreationWizard {
     private final Set<String> selectedParentNames = new HashSet<>();
 
     public RankCreationWizard(ServiceRegistry registry, Player issuer) {
-        this.registry = registry;
         this.issuer = issuer;
+        this.registry = registry;
+        this.rankService = registry.get(RankService.class);
         this.chatService = registry.get(ChatService.class);
+        this.menuManager = registry.get(MenuManager.class);
     }
 
     /**
@@ -125,7 +131,7 @@ public final class RankCreationWizard {
         issuer.sendMessage(MiniMessage.miniMessage().deserialize(
                 "\n<green>Now, please select the parent rank(s) from the menu.\n"
         ));
-        registry.get(MenuManager.class).open(issuer, new ParentSelectionMenu(this));
+        menuManager.open(issuer, new ParentSelectionMenu(this));
     }
 
     /**
@@ -133,14 +139,12 @@ public final class RankCreationWizard {
      * This is called by the "Done" button in the ParentSelectionMenu.
      */
     public void advanceToConfirmation() {
-        registry.get(MenuManager.class).open(issuer, new RankConfirmationMenu(this));
+        menuManager.open(issuer, new RankConfirmationMenu(this));
     }
 
     public void createRank() {
-        RankModule rankModule = registry.get(RankModule.class);
-
         try {
-            rankModule.createRank(
+            rankService.createRank(
                     this.name,
                     this.priority,
                     this.prefix,

@@ -5,7 +5,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.lord.punishment.enums.PunishmentStatusFilter;
 import com.lord.punishment.repositories.PunishmentRepository;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 
 import java.util.List;
 import java.util.UUID;

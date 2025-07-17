@@ -1,7 +1,7 @@
 package com.lord.chat;
 
 import com.lord.Lord;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import lombok.Getter;
 import lombok.Setter;

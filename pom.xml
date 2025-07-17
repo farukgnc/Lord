@@ -13,7 +13,7 @@
         <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- YENİ EKLENEN KISIM: Test sunucusunun plugins klasör yolu -->
-        <server.plugins.dir>C:\Users\Faruk\Desktop\server\plugins</server.plugins.dir>
+        <server.plugins.dir>C:\Users\Faruk\Desktop\servers</server.plugins.dir>
     </properties>
 
     <build>

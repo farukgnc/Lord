@@ -2,7 +2,7 @@ package com.lord.database;
 
 import com.lord.Lord;
 import com.lord.config.impl.MainConfig;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
@@ -13,7 +13,6 @@ import org.bson.UuidRepresentation;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Mongo {
 

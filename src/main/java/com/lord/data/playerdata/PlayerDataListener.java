@@ -5,7 +5,7 @@ import com.lord.data.CachedData;
 import com.lord.grant.Grant;
 import com.lord.grant.GrantCacheService;
 import com.lord.punishment.PunishmentCacheService;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;

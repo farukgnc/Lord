@@ -2,7 +2,7 @@ package com.lord.grant.menus;
 
 import com.lord.menu.MenuManager;
 import com.lord.rank.Rank;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.entity.Player;

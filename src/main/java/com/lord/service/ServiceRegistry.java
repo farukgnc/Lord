@@ -1,4 +1,4 @@
-package com.lord.services;
+package com.lord.service;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

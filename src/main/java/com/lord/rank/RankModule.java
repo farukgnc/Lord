@@ -1,18 +1,15 @@
 package com.lord.rank;
 
 import com.lord.module.Module;
-import com.lord.rank.repositories.RankRepository;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 
 public final class RankModule implements Module {
 
     private final ServiceRegistry registry;
-    private final RankRepository rankRepository;
     private RankService rankService;
 
     public RankModule(ServiceRegistry registry) {
         this.registry = registry;
-        this.rankRepository = registry.get(RankRepository.class);
     }
 
     @Override

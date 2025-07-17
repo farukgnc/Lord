@@ -2,7 +2,7 @@ package com.lord.chat;
 
 import com.lord.Lord;
 import com.lord.module.Module;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 import org.bukkit.Bukkit;
 
 public final class ChatModule implements Module {

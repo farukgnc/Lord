@@ -15,7 +15,7 @@ import com.lord.module.ModuleManager;
 import com.lord.punishment.PunishmentModule;
 import com.lord.rank.RankModule;
 import com.lord.redis.RedisModule;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 import lombok.Getter;
 import org.bukkit.plugin.java.JavaPlugin;
 

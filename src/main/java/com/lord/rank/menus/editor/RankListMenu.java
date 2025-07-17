@@ -5,7 +5,7 @@ import com.lord.menu.components.UIComponent;
 import com.lord.menu.utils.ButtonBuilder;
 import com.lord.rank.Rank;
 import com.lord.rank.repositories.RankRepository;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 

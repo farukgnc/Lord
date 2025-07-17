@@ -2,7 +2,7 @@ package com.lord.redis;
 
 import com.lord.Lord;
 import com.lord.config.impl.MainConfig;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 import lombok.Getter;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;

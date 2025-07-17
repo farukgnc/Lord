@@ -13,8 +13,8 @@ public interface GrantRepository {
 
     CompletableFuture<Set<Grant>> findByPlayer(UUID playerUuid);
 
-    CompletableFuture<Void> save(Grant grant);
+    CompletableFuture<Boolean> save(Grant grant);
 
-    CompletableFuture<Void> delete(Grant grant);
+    CompletableFuture<Boolean> delete(Grant grant);
 
 }

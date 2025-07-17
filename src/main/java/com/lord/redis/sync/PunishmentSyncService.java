@@ -1,13 +1,14 @@
 package com.lord.redis.sync;
 
 import com.lord.Lord;
+import com.lord.data.playerdata.PlayerDataCache;
 import com.lord.punishment.Punishment;
 import com.lord.punishment.PunishmentCacheService;
 import com.lord.redis.RedisService;
 import com.lord.redis.events.PunishmentSyncEvent;
 import com.lord.redis.serialization.RedisSerializer;
 import com.lord.redis.utils.RedisKeys;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 import redis.clients.jedis.JedisPubSub;
 
 import java.util.UUID;
@@ -17,6 +18,7 @@ public class PunishmentSyncService {
     
     private static final String CHANNEL = RedisKeys.PUNISHMENT_SYNC_CHANNEL;
     
+    private final ServiceRegistry serviceRegistry;
     private final RedisService redisService;
     private final PunishmentCacheService cacheService;
     private final Logger logger;

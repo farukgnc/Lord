@@ -1,12 +1,14 @@
 package com.lord.redis.sync;
 
 import com.lord.Lord;
+import com.lord.data.playerdata.PlayerDataCache;
 import com.lord.rank.Rank;
+import com.lord.rank.repositories.RankRepository;
 import com.lord.redis.RedisService;
 import com.lord.redis.events.RankSyncEvent;
 import com.lord.redis.serialization.RedisSerializer;
 import com.lord.redis.utils.RedisKeys;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 import redis.clients.jedis.JedisPubSub;
 
 import java.util.logging.Logger;
@@ -16,11 +18,17 @@ public class RankSyncService {
     private static final String CHANNEL = RedisKeys.RANK_SYNC_CHANNEL;
     
     private final RedisService redisService;
+    private final RankRepository rankRepository;
+    private final PlayerDataCache playerDataCache;
+
     private final Logger logger;
     private final String serverId;
     
     public RankSyncService(ServiceRegistry serviceRegistry) {
         this.redisService = serviceRegistry.get(RedisService.class);
+        this.rankRepository = serviceRegistry.get(RankRepository.class);
+        this.playerDataCache = serviceRegistry.get(PlayerDataCache.class);
+
         this.logger = serviceRegistry.get(Lord.class).getLogger();
         this.serverId = redisService.getServerId();
         
@@ -51,17 +59,17 @@ public class RankSyncService {
         switch (event.getAction()) {
             case CREATE -> {
                 logger.info("Rank '" + event.getRankName() + "' created on " + event.getSourceServerId());
-                // Here you could invalidate rank caches or trigger rank reload
             }
             case UPDATE -> {
                 logger.info("Rank '" + event.getRankName() + "' updated on " + event.getSourceServerId());
-                // Here you could invalidate rank caches or trigger rank reload
             }
             case DELETE -> {
                 logger.info("Rank '" + event.getRankName() + "' deleted on " + event.getSourceServerId());
-                // Here you could invalidate rank caches or trigger rank reload
             }
         }
+
+        rankRepository.loadAllRanks();
+        playerDataCache.refreshPlayerDataCache();
     }
     
     public void broadcastRankCreate(Rank rank) {

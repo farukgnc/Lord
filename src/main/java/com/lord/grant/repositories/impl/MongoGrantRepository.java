@@ -45,17 +45,29 @@ public final class MongoGrantRepository implements GrantRepository {
     }
 
     @Override
-    public CompletableFuture<Void> save(Grant grant) {
-        return CompletableFuture.runAsync(() -> {
-            Document doc = grantToDocument(grant);
-            collection.replaceOne(Filters.eq("_id", grant.getUniqueId()), doc, new ReplaceOptions().upsert(true));
+    public CompletableFuture<Boolean> save(Grant grant) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                Document doc = grantToDocument(grant);
+                collection.replaceOne(Filters.eq("_id", grant.getUniqueId()), doc, new ReplaceOptions().upsert(true));
+                return true;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
         });
     }
 
     @Override
-    public CompletableFuture<Void> delete(Grant grant) {
-        return CompletableFuture.runAsync(() -> {
-            collection.deleteOne(Filters.eq("_id", grant.getUniqueId()));
+    public CompletableFuture<Boolean> delete(Grant grant) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                collection.deleteOne(Filters.eq("_id", grant.getUniqueId()));
+                return true;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
         });
     }
 

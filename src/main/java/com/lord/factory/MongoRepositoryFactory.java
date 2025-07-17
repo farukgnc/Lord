@@ -5,12 +5,11 @@ import com.lord.grant.repositories.GrantRepository;
 import com.lord.grant.repositories.impl.MongoGrantRepository;
 import com.lord.punishment.PunishmentCacheService;
 import com.lord.punishment.repositories.PunishmentRepository;
-import com.lord.punishment.repositories.impl.InMemoryPunishmentRepository;
 import com.lord.punishment.repositories.impl.MongoPunishmentRepository;
 import com.lord.rank.repositories.RankRepository;
 import com.lord.rank.repositories.impl.MongoRankRepository;
 import com.lord.grant.GrantCacheService;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 
 import java.util.concurrent.CompletableFuture;
 

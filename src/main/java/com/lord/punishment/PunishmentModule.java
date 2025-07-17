@@ -3,22 +3,18 @@ package com.lord.punishment;
 import com.lord.Lord;
 import com.lord.module.Module;
 import com.lord.punishment.repositories.PunishmentRepository;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 import org.bukkit.Bukkit;
 
 public final class PunishmentModule implements Module {
 
     private final ServiceRegistry registry;
-    private final PunishmentRepository punishmentRepository;
-    private final PunishmentCacheService punishmentCacheService;
     private final Lord plugin;
     private PunishmentService punishmentService;
 
     public PunishmentModule(ServiceRegistry registry) {
         this.registry = registry;
         this.plugin = registry.get(Lord.class);
-        this.punishmentRepository = registry.get(PunishmentRepository.class);
-        this.punishmentCacheService = registry.get(PunishmentCacheService.class);
     }
 
     @Override

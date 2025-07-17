@@ -2,7 +2,7 @@ package com.lord.punishment;
 
 import com.lord.Lord;
 import com.lord.punishment.enums.PunishmentType;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 import com.lord.utils.TimeUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;

@@ -1,10 +1,9 @@
 package com.lord.rank.repositories.impl;
 
-import com.lord.Lord;
 import com.lord.database.Mongo;
 import com.lord.rank.Rank;
 import com.lord.rank.repositories.RankRepository;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
@@ -56,29 +55,38 @@ public final class MongoRankRepository implements RankRepository {
     }
 
     @Override
-    public void save(Rank rank) {
+    public CompletableFuture<Boolean> save(Rank rank) {
         // 1. Belleği anında güncelle.
         this.ranks.put(rank.getName().toLowerCase(), rank);
 
-        // 2. Veritabanına yazma işlemini arka plana at, sunucuyu yavaşlatma.
-        CompletableFuture.runAsync(() -> {
-            Document doc = rankToDocument(rank);
-            this.collection.replaceOne(
-                    Filters.eq("_id", rank.getName().toLowerCase()),
-                    doc,
-                    new ReplaceOptions().upsert(true)
-            );
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                Document doc = rankToDocument(rank);
+                this.collection.replaceOne(
+                        Filters.eq("_id", rank.getName().toLowerCase()),
+                        doc,
+                        new ReplaceOptions().upsert(true)
+                );
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
         });
     }
 
     @Override
-    public void delete(String name) {
+    public CompletableFuture<Boolean> delete(String name) {
         // 1. Belleği anında güncelle.
         this.ranks.remove(name.toLowerCase());
 
         // 2. Veritabanından silme işlemini arka plana at.
-        CompletableFuture.runAsync(() -> {
-            this.collection.deleteOne(Filters.eq("_id", name.toLowerCase()));
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                this.collection.deleteOne(Filters.eq("_id", name.toLowerCase()));
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
         });
     }
 

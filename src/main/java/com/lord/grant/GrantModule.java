@@ -3,21 +3,15 @@ package com.lord.grant;
 import com.lord.Lord;
 import com.lord.grant.repositories.GrantRepository;
 import com.lord.module.Module;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 
 public final class GrantModule implements Module {
 
     private final ServiceRegistry registry;
-    private final GrantRepository grantRepository;
-    private final GrantCacheService grantCacheService;
-    private final Lord plugin;
     private GrantService grantService;
 
     public GrantModule(ServiceRegistry registry) {
         this.registry = registry;
-        this.plugin = registry.get(Lord.class);
-        this.grantRepository = registry.get(GrantRepository.class);
-        this.grantCacheService = registry.get(GrantCacheService.class);
     }
 
     @Override

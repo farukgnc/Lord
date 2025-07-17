@@ -4,28 +4,25 @@ import com.lord.module.Module;
 import com.lord.redis.sync.GrantSyncService;
 import com.lord.redis.sync.PunishmentSyncService;
 import com.lord.redis.sync.RankSyncService;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
+import org.bukkit.Bukkit;
 
 import java.util.logging.Logger;
 
-public class RedisModule extends Module {
+public class RedisModule implements Module {
     
     private final ServiceRegistry serviceRegistry;
     private final Logger logger;
     
     private RedisService redisService;
-    private PunishmentSyncService punishmentSyncService;
-    private GrantSyncService grantSyncService;
-    private RankSyncService rankSyncService;
     
     public RedisModule(ServiceRegistry serviceRegistry) {
-        super("Redis");
         this.serviceRegistry = serviceRegistry;
-        this.logger = serviceRegistry.get(Logger.class);
+        this.logger = Bukkit.getLogger();
     }
     
     @Override
-    public void onEnable() {
+    public void enable() {
         logger.info("Enabling Redis module...");
         
         // Initialize Redis service
@@ -39,21 +36,16 @@ public class RedisModule extends Module {
             return;
         }
         
-        // Initialize sync services
-        this.punishmentSyncService = new PunishmentSyncService(serviceRegistry);
-        this.grantSyncService = new GrantSyncService(serviceRegistry);
-        this.rankSyncService = new RankSyncService(serviceRegistry);
-        
         // Register sync services
-        serviceRegistry.register(PunishmentSyncService.class, punishmentSyncService);
-        serviceRegistry.register(GrantSyncService.class, grantSyncService);
-        serviceRegistry.register(RankSyncService.class, rankSyncService);
+        serviceRegistry.register(PunishmentSyncService.class, new PunishmentSyncService(serviceRegistry));
+        serviceRegistry.register(GrantSyncService.class, new GrantSyncService(serviceRegistry));
+        serviceRegistry.register(RankSyncService.class, new RankSyncService(serviceRegistry));
         
         logger.info("Redis module enabled successfully!");
     }
     
     @Override
-    public void onDisable() {
+    public void disable() {
         logger.info("Disabling Redis module...");
         
         if (redisService != null) {
@@ -61,5 +53,10 @@ public class RedisModule extends Module {
         }
         
         logger.info("Redis module disabled!");
+    }
+
+    @Override
+    public String getName() {
+        return "Redis";
     }
 }

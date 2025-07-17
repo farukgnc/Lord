@@ -7,7 +7,7 @@ import com.lord.punishment.repositories.PunishmentRepository;
 import com.lord.punishment.repositories.impl.InMemoryPunishmentRepository;
 import com.lord.rank.repositories.RankRepository;
 import com.lord.rank.repositories.impl.InMemoryRankRepository;
-import com.lord.services.ServiceRegistry;
+import com.lord.service.ServiceRegistry;
 
 import java.util.concurrent.CompletableFuture;
 

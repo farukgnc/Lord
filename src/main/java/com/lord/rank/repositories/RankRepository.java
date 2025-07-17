@@ -14,9 +14,9 @@ public interface RankRepository {
 
     CompletableFuture<Set<Rank>> loadAllRanks();
 
-    void save(Rank rank);
+    CompletableFuture<Boolean> save(Rank rank);
 
-    void delete(String name);
+    CompletableFuture<Boolean> delete(String name);
 
     CompletableFuture<Boolean> isEmpty();
 
