@@ -1,7 +1,6 @@
 package com.lord.redis.sync;
 
 import com.lord.Lord;
-import com.lord.data.playerdata.PlayerDataCache;
 import com.lord.punishment.Punishment;
 import com.lord.punishment.PunishmentCacheService;
 import com.lord.redis.RedisService;
@@ -17,8 +16,7 @@ import java.util.logging.Logger;
 public class PunishmentSyncService {
     
     private static final String CHANNEL = RedisKeys.PUNISHMENT_SYNC_CHANNEL;
-    
-    private final ServiceRegistry serviceRegistry;
+
     private final RedisService redisService;
     private final PunishmentCacheService cacheService;
     private final Logger logger;
