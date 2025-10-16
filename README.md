@@ -11,21 +11,6 @@ Lord is a Minecraft server core plugin that provides essential features for mana
 *   **MongoDB and In-Memory Support:** Choose between MongoDB for persistent storage or an in-memory database for testing.
 *   **GUI Menus:** Easy-to-use GUI menus for managing ranks, grants, and punishments.
 
-## Commands
-
-*   `/ping`: Pong!
-*   `/grant <player> <rank> <duration>`: Grant a player a rank.
-*   `/grants <player>`: See a player's grants.
-*   `/rank`: Rank management command.
-*   `/ban <player> <reason>`: Ban a player.
-*   `/mute <player> <reason>`: Mute a player.
-*   `/warn <player> <reason>`: Warn a player.
-*   `/kick <player> <reason>`: Kick a player.
-*   `/unban <player>`: Unban a player.
-*   `/unmute <player>`: Unmute a player.
-*   `/punishments <player>`: See a player's punishments.
-*   `/chat`: Chat management command.
-
 ## Dependencies
 
 *   [Paper API](https://papermc.io/)
