@@ -13,7 +13,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
+import io.papermc.paper.event.player.AsyncChatEvent;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 
 import java.time.Duration;
@@ -41,7 +41,8 @@ public final class PunishmentListener implements Listener {
         try {
             // 1. Akıllı önbellekten oyuncunun ceza geçmişini iste.
             // Bu, oyuncu daha önce sorgulanmadıysa veritabanından asenkron olarak çeker.
-            // Biz zaten asenkron bir olayda olduğumuz için, .get() ile beklemek güvenlidir ve sunucuyu kilitlemez.
+            // Biz zaten asenkron bir olayda olduğumuz için, .get() ile beklemek güvenlidir
+            // ve sunucuyu kilitlemez.
             List<Punishment> punishments = punishmentCacheService.getPunishments(playerUuid).get(5, TimeUnit.SECONDS);
 
             // 2. Gelen cezalar içinde aktif bir BAN olup olmadığını kontrol et.
@@ -53,23 +54,24 @@ public final class PunishmentListener implements Listener {
             if (activeBan.isPresent()) {
                 Punishment ban = activeBan.get();
                 String reason = ban.getReason();
-                String remainingTime = ban.isPermanent() ? "Permanent" : TimeUtil.formatDuration(Duration.between(Instant.now(), ban.getExpiry()));
+                String remainingTime = ban.isPermanent() ? "Permanent"
+                        : TimeUtil.formatDuration(Duration.between(Instant.now(), ban.getExpiry()));
 
                 Component kickMessage = MiniMessage.miniMessage().deserialize(
                         "<red>You are banned from this server!\n \n<gray>Reason: <white><reason>\n<gray>Expires in: <white><expires>",
                         Placeholder.unparsed("reason", reason),
-                        Placeholder.unparsed("expires", remainingTime)
-                );
+                        Placeholder.unparsed("expires", remainingTime));
                 event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, kickMessage);
             }
         } catch (Exception e) {
-            event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, Component.text("An error occurred while checking your punishment status.", NamedTextColor.RED));
+            event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER,
+                    Component.text("An error occurred while checking your punishment status.", NamedTextColor.RED));
             e.printStackTrace();
         }
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-    public void onPlayerChat(AsyncPlayerChatEvent event) {
+    public void onPlayerChat(AsyncChatEvent event) {
         Player player = event.getPlayer();
 
         // Akıllı önbellekten oyuncunun ceza geçmişini iste.
@@ -85,12 +87,15 @@ public final class PunishmentListener implements Listener {
                     event.setCancelled(true);
                     Punishment mute = activeMute.get();
                     String reason = mute.getReason();
-                    String remainingTime = mute.isPermanent() ? "Permanent" : TimeUtil.formatDuration(Duration.between(Instant.now(), mute.getExpiry()));
+                    String remainingTime = mute.isPermanent() ? "Permanent"
+                            : TimeUtil.formatDuration(Duration.between(Instant.now(), mute.getExpiry()));
 
                     player.sendMessage(Component.text("--------------------------------", NamedTextColor.RED));
                     player.sendMessage(Component.text("You are currently muted.", NamedTextColor.YELLOW));
-                    player.sendMessage(Component.text("Reason: ", NamedTextColor.GRAY).append(Component.text(reason, NamedTextColor.WHITE)));
-                    player.sendMessage(Component.text("Expires in: ", NamedTextColor.GRAY).append(Component.text(remainingTime, NamedTextColor.WHITE)));
+                    player.sendMessage(Component.text("Reason: ", NamedTextColor.GRAY)
+                            .append(Component.text(reason, NamedTextColor.WHITE)));
+                    player.sendMessage(Component.text("Expires in: ", NamedTextColor.GRAY)
+                            .append(Component.text(remainingTime, NamedTextColor.WHITE)));
                     player.sendMessage(Component.text("--------------------------------", NamedTextColor.RED));
                 });
             }

@@ -152,27 +152,29 @@ public class PunishmentService {
     }
 
     public void performPunishmentActions(Punishment punishment, String targetName, String issuerName) {
-        if (punishment.getType() == PunishmentType.BAN || punishment.getType() == PunishmentType.KICK) {
-            Player onlineTarget = Bukkit.getPlayer(punishment.getPunishedUuid());
-            if (onlineTarget != null) {
-                String kickReason = "You have been " + punishment.getType().getPastTense() + ".\n" +
-                        "Reason: " + punishment.getReason() + "\n" +
-                        (punishment.getType() == PunishmentType.BAN
-                                ? "Expires: " + TimeUtil
-                                        .formatDuration(Duration.between(Instant.now(), punishment.getExpiry()))
-                                : "");
-                onlineTarget.kick(Component.text(kickReason));
+        runOnMainThread(() -> {
+            if (punishment.getType() == PunishmentType.BAN || punishment.getType() == PunishmentType.KICK) {
+                Player onlineTarget = Bukkit.getPlayer(punishment.getPunishedUuid());
+                if (onlineTarget != null) {
+                    String kickReason = "You have been " + punishment.getType().getPastTense() + ".\n" +
+                            "Reason: " + punishment.getReason() + "\n" +
+                            (punishment.getType() == PunishmentType.BAN
+                                    ? "Expires: " + TimeUtil
+                                            .formatDuration(Duration.between(Instant.now(), punishment.getExpiry()))
+                                    : "");
+                    onlineTarget.kick(Component.text(kickReason));
+                }
             }
-        }
 
-        String verb = punishment.getType().getPastTense();
-        Component broadcastMessage = MiniMessage.miniMessage().deserialize(
-                "<red><b><type></b></red> <gray>»</gray> <white><target></white> was <verb> by <white><issuer></white>.",
-                Placeholder.unparsed("type", punishment.getType().name()),
-                Placeholder.unparsed("verb", verb),
-                Placeholder.unparsed("target", targetName),
-                Placeholder.unparsed("issuer", issuerName));
-        Bukkit.broadcast(broadcastMessage);
+            String verb = punishment.getType().getPastTense();
+            Component broadcastMessage = MiniMessage.miniMessage().deserialize(
+                    "<red><b><type></b></red> <gray>»</gray> <white><target></white> was <verb> by <white><issuer></white>.",
+                    Placeholder.unparsed("type", punishment.getType().name()),
+                    Placeholder.unparsed("verb", verb),
+                    Placeholder.unparsed("target", targetName),
+                    Placeholder.unparsed("issuer", issuerName));
+            Bukkit.broadcast(broadcastMessage);
+        });
     }
 
     private void runOnMainThread(Runnable task) {
