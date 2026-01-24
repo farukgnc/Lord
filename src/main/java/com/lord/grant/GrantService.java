@@ -24,12 +24,12 @@ public class GrantService {
     private final GrantCacheService grantCacheService;
     private final PlayerDataCache playerDataCache;
     private GrantSyncService grantSyncService;
-    
+
     public GrantService(ServiceRegistry registry) {
         this.grantRepository = registry.get(GrantRepository.class);
         this.grantCacheService = registry.get(GrantCacheService.class);
         this.playerDataCache = registry.get(PlayerDataCache.class);
-        
+
         // Initialize Redis sync service if available
         try {
             this.grantSyncService = registry.get(GrantSyncService.class);
@@ -38,79 +38,80 @@ public class GrantService {
             this.grantSyncService = null;
         }
     }
-    
+
     /**
      * Creates a new grant for a player
      */
-    public CompletableFuture<Grant> createGrant(UUID targetUuid, String targetName, String rankName, 
-                                               CommandSender issuer, Duration duration) {
-        
+    public CompletableFuture<Grant> createGrant(UUID targetUuid, String targetName, String rankName,
+            CommandSender issuer, Duration duration) {
+
         UUID issuerUuid = (issuer instanceof Player p) ? p.getUniqueId() : null;
         Grant newGrant = new Grant(targetUuid, rankName, issuerUuid, duration);
-        
+
         return grantRepository.save(newGrant).thenApply(success -> {
             // Invalidate the grant cache for this player
             grantCacheService.invalidate(targetUuid);
-            
+
             // Broadcast grant creation to other servers via Redis
             if (grantSyncService != null) {
-                grantSyncService.broadcastGrantCreate(newGrant);
+                String issuerName = (issuer instanceof Player) ? issuer.getName() : "Console";
+                grantSyncService.broadcastGrantCreate(newGrant, targetName, issuerName);
             }
-            
+
             // Refresh player data to apply the new grant immediately
             playerDataCache.refreshPlayerData(targetUuid).thenRun(() -> {
                 // Send success message
                 String issuerName = (issuer instanceof Player) ? issuer.getName() : "Console";
                 String durationStr = duration.isZero() ? "permanently" : "for " + TimeUtil.formatDuration(duration);
-                
+
                 Component message = MiniMessage.miniMessage().deserialize(
-                    "<green><b>GRANT</b></green> <gray>»</gray> <white><target></white> was granted <yellow><rank></yellow> <duration> by <white><issuer></white>.",
-                    Placeholder.unparsed("target", targetName),
-                    Placeholder.unparsed("rank", rankName),
-                    Placeholder.unparsed("duration", durationStr),
-                    Placeholder.unparsed("issuer", issuerName)
-                );
-                
+                        "<green><b>GRANT</b></green> <gray>»</gray> <white><target></white> was granted <yellow><rank></yellow> <duration> by <white><issuer></white>.",
+                        Placeholder.unparsed("target", targetName),
+                        Placeholder.unparsed("rank", rankName),
+                        Placeholder.unparsed("duration", durationStr),
+                        Placeholder.unparsed("issuer", issuerName));
+
                 Bukkit.broadcast(message);
             });
-            
+
             return newGrant;
         });
     }
-    
+
     /**
      * Removes a grant from a player
      */
-    public CompletableFuture<Boolean> removeGrant(UUID grantId, UUID targetUuid, String targetName, CommandSender remover) {
+    public CompletableFuture<Boolean> removeGrant(UUID grantId, UUID targetUuid, String targetName,
+            CommandSender remover) {
         return grantRepository.findById(grantId).thenCompose(grantOpt -> {
             if (grantOpt.isEmpty()) {
                 remover.sendMessage(Component.text("Grant not found.", NamedTextColor.RED));
                 return CompletableFuture.completedFuture(false);
             }
-            
+
             Grant grant = grantOpt.get();
-            
+
             return grantRepository.delete(grant).thenApply(success -> {
                 if (success) {
                     // Invalidate the grant cache for this player
                     grantCacheService.invalidate(targetUuid);
-                    
+
                     // Broadcast grant deletion to other servers via Redis
                     if (grantSyncService != null) {
-                        grantSyncService.broadcastGrantDelete(grantId, targetUuid);
+                        String removerName = (remover instanceof Player) ? remover.getName() : "Console";
+                        grantSyncService.broadcastGrantDelete(grantId, targetUuid, targetName, removerName);
                     }
-                    
+
                     // Refresh player data to remove the grant immediately
                     playerDataCache.refreshPlayerData(targetUuid).thenRun(() -> {
                         String removerName = (remover instanceof Player) ? remover.getName() : "Console";
-                        
+
                         Component message = MiniMessage.miniMessage().deserialize(
-                            "<red><b>GRANT REMOVED</b></red> <gray>»</gray> <white><target></white>'s <yellow><rank></yellow> grant was removed by <white><remover></white>.",
-                            Placeholder.unparsed("target", targetName),
-                            Placeholder.unparsed("rank", grant.getRankName()),
-                            Placeholder.unparsed("remover", removerName)
-                        );
-                        
+                                "<red><b>GRANT REMOVED</b></red> <gray>»</gray> <white><target></white>'s <yellow><rank></yellow> grant was removed by <white><remover></white>.",
+                                Placeholder.unparsed("target", targetName),
+                                Placeholder.unparsed("rank", grant.getRankName()),
+                                Placeholder.unparsed("remover", removerName));
+
                         Bukkit.broadcast(message);
                     });
                 }
@@ -118,34 +119,31 @@ public class GrantService {
             });
         });
     }
-    
+
     /**
      * Gets all grants for a player
      */
     public CompletableFuture<Set<Grant>> getPlayerGrants(UUID playerUuid) {
         return grantCacheService.getGrants(playerUuid);
     }
-    
+
     /**
      * Gets all active grants for a player
      */
     public CompletableFuture<Set<Grant>> getActiveGrants(UUID playerUuid) {
-        return getPlayerGrants(playerUuid).thenApply(grants -> 
-            grants.stream()
-                  .filter(Grant::isActive)
-                  .collect(java.util.stream.Collectors.toSet())
-        );
+        return getPlayerGrants(playerUuid).thenApply(grants -> grants.stream()
+                .filter(Grant::isActive)
+                .collect(java.util.stream.Collectors.toSet()));
     }
-    
+
     /**
      * Checks if a player has a specific active grant
      */
     public CompletableFuture<Boolean> hasActiveGrant(UUID playerUuid, String rankName) {
-        return getActiveGrants(playerUuid).thenApply(grants ->
-            grants.stream().anyMatch(grant -> grant.getRankName().equalsIgnoreCase(rankName))
-        );
+        return getActiveGrants(playerUuid)
+                .thenApply(grants -> grants.stream().anyMatch(grant -> grant.getRankName().equalsIgnoreCase(rankName)));
     }
-    
+
     /**
      * Invalidates the grant cache for a player
      */

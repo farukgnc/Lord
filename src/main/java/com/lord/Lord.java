@@ -22,10 +22,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 @Getter
 public final class Lord extends JavaPlugin {
 
-    // TODO punishmentModule:48
-    // TODO redis sistemi bağlandı fakat mesajı okuyan serverlar gerekli işlemleri yapmıyor
-    // o kısımlar redis.sync paketi içinde
-
     private ServiceRegistry serviceRegistry;
     private ModuleManager moduleManager;
     private RepositoryFactory repositoryFactory;
@@ -62,7 +58,8 @@ public final class Lord extends JavaPlugin {
         this.serviceRegistry.register(MenuManager.class, new MenuManager(this));
         this.serviceRegistry.register(PlayerDataCache.class, new PlayerDataCache(this.serviceRegistry));
 
-        // 5. Modüllerin yaşam döngüsünü (enable/disable) yönetmek için ModuleManager'a kaydet.
+        // 5. Modüllerin yaşam döngüsünü (enable/disable) yönetmek için ModuleManager'a
+        // kaydet.
         this.moduleManager = new ModuleManager();
         this.moduleManager.registerModule(new RedisModule(this.serviceRegistry));
         this.moduleManager.registerModule(new RankModule(this.serviceRegistry));
