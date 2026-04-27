@@ -18,25 +18,25 @@ public class MainConfig extends Configuration {
     }
 
     @ConfigData("databaseType")
-    private String databaseType = "mongodb";
+    private String databaseType = "inmemory";
 
     @ConfigData("mongo.connection-string")
-    private String mongoConnectionString = "mongodb+srv://titan:12345a@titan.e4ojfqr.mongodb.net/?retryWrites=true&w=majority&appName=lord";
+    private String mongoConnectionString = "";
 
     @ConfigData("mongo.database-name")
     private String mongoDatabaseName = "lord";
 
     @ConfigData("redis.host")
-    private String redisHost = "redis-16071.c293.eu-central-1-1.ec2.redns.redis-cloud.com";
+    private String redisHost = "127.0.0.1";
 
     @ConfigData("redis.port")
-    private int redisPort = 16071;
+    private int redisPort = 6379;
 
     @ConfigData("redis.password")
-    private String redisPassword = "05yRcV105p4FnGsNSDxgueb0QXP1inX6";
+    private String redisPassword = "";
 
     @ConfigData("server-id")
-    private String serverId = "lobby-1";
+    private String serverId = "change-me";
 
     @ConfigData("chat.format")
     private String chatFormat = "<prefix><gray><player_name></gray><suffix><dark_gray>: <white><message>";
