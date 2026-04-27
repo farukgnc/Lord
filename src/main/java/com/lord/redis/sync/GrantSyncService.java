@@ -22,6 +22,7 @@ public class GrantSyncService {
 
     private static final String CHANNEL = RedisKeys.GRANT_SYNC_CHANNEL;
 
+    private final Lord plugin;
     private final RedisService redisService;
     private final GrantCacheService grantCacheService;
     private final PlayerDataCache playerDataCache;
@@ -30,6 +31,7 @@ public class GrantSyncService {
     private final String serverId;
 
     public GrantSyncService(ServiceRegistry serviceRegistry) {
+        this.plugin = serviceRegistry.get(Lord.class);
         this.redisService = serviceRegistry.get(RedisService.class);
         this.grantCacheService = serviceRegistry.get(GrantCacheService.class);
         this.playerDataCache = serviceRegistry.get(PlayerDataCache.class);
@@ -74,13 +76,13 @@ public class GrantSyncService {
                         Placeholder.unparsed("rank", event.getGrant().getRankName()),
                         Placeholder.unparsed("duration", durationStr),
                         Placeholder.unparsed("issuer", event.getIssuerName()));
-                Bukkit.broadcast(message);
+                Bukkit.getScheduler().runTask(plugin, () -> Bukkit.broadcast(message));
             } else if (event.getAction() == GrantSyncEvent.Action.DELETE) {
                 Component message = MiniMessage.miniMessage().deserialize(
                         "<red><b>GRANT REMOVED</b></red> <gray>»</gray> <white><target></white>'s grant was removed by <white><remover></white> (via remote).",
                         Placeholder.unparsed("target", event.getTargetName()),
                         Placeholder.unparsed("remover", event.getIssuerName()));
-                Bukkit.broadcast(message);
+                Bukkit.getScheduler().runTask(plugin, () -> Bukkit.broadcast(message));
             }
         });
 

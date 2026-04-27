@@ -1,5 +1,6 @@
 package com.lord.rank;
 
+import com.lord.Lord;
 import com.lord.rank.exceptions.RankAlreadyExistsException;
 import com.lord.rank.repositories.RankRepository;
 import com.lord.redis.sync.RankSyncService;
@@ -18,10 +19,12 @@ import java.util.concurrent.CompletableFuture;
 
 public class RankService {
 
+    private final Lord plugin;
     private final RankRepository rankRepository;
     private RankSyncService rankSyncService;
     
     public RankService(ServiceRegistry registry) {
+        this.plugin = registry.get(Lord.class);
         this.rankRepository = registry.get(RankRepository.class);
         
         // Initialize Redis sync service if available
@@ -111,7 +114,7 @@ public class RankService {
                 Placeholder.unparsed("updater", updaterName)
             );
             
-            Bukkit.broadcast(message);
+            runOnMainThread(() -> Bukkit.broadcast(message));
             return true;
         });
     }
@@ -140,7 +143,7 @@ public class RankService {
                     Placeholder.unparsed("deleter", deleterName)
                 );
                 
-                Bukkit.broadcast(message);
+                runOnMainThread(() -> Bukkit.broadcast(message));
             }
             return success;
         });
@@ -179,5 +182,9 @@ public class RankService {
         } catch (RankAlreadyExistsException e) {
             // Expected when server restarts - ranks already exist
         }
+    }
+
+    private void runOnMainThread(Runnable task) {
+        Bukkit.getScheduler().runTask(this.plugin, task);
     }
 }

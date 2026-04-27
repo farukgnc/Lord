@@ -1,5 +1,6 @@
 package com.lord.grant;
 
+import com.lord.Lord;
 import com.lord.data.playerdata.PlayerDataCache;
 import com.lord.grant.repositories.GrantRepository;
 import com.lord.redis.sync.GrantSyncService;
@@ -20,12 +21,14 @@ import java.util.concurrent.CompletableFuture;
 
 public class GrantService {
 
+    private final Lord plugin;
     private final GrantRepository grantRepository;
     private final GrantCacheService grantCacheService;
     private final PlayerDataCache playerDataCache;
     private GrantSyncService grantSyncService;
 
     public GrantService(ServiceRegistry registry) {
+        this.plugin = registry.get(Lord.class);
         this.grantRepository = registry.get(GrantRepository.class);
         this.grantCacheService = registry.get(GrantCacheService.class);
         this.playerDataCache = registry.get(PlayerDataCache.class);
@@ -71,7 +74,7 @@ public class GrantService {
                         Placeholder.unparsed("duration", durationStr),
                         Placeholder.unparsed("issuer", issuerName));
 
-                Bukkit.broadcast(message);
+                runOnMainThread(() -> Bukkit.broadcast(message));
             });
 
             return newGrant;
@@ -112,7 +115,7 @@ public class GrantService {
                                 Placeholder.unparsed("rank", grant.getRankName()),
                                 Placeholder.unparsed("remover", removerName));
 
-                        Bukkit.broadcast(message);
+                        runOnMainThread(() -> Bukkit.broadcast(message));
                     });
                 }
                 return success;
@@ -149,5 +152,9 @@ public class GrantService {
      */
     public void invalidateCache(UUID playerUuid) {
         grantCacheService.invalidate(playerUuid);
+    }
+
+    private void runOnMainThread(Runnable task) {
+        Bukkit.getScheduler().runTask(this.plugin, task);
     }
 }

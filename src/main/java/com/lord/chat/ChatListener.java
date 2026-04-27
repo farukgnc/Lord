@@ -1,5 +1,6 @@
 package com.lord.chat;
 
+import com.lord.Lord;
 import com.lord.config.impl.MainConfig;
 import com.lord.data.playerdata.PlayerDataCache;
 import com.lord.service.ServiceRegistry;
@@ -16,6 +17,7 @@ import org.bukkit.event.Listener;
 
 public final class ChatListener implements Listener {
 
+    private final Lord plugin;
     private final ChatService chatService;
     private final PlayerDataCache playerDataCache;
     private final String chatFormat;
@@ -23,6 +25,7 @@ public final class ChatListener implements Listener {
     private final double chatCooldown;
 
     public ChatListener(ServiceRegistry registry) {
+        this.plugin = registry.get(Lord.class);
         this.chatService = registry.get(ChatService.class);
         this.playerDataCache = registry.get(PlayerDataCache.class);
 
@@ -76,9 +79,8 @@ public final class ChatListener implements Listener {
                     Placeholder.component("message", messageComponent)
             );
 
-            // 4. Oluşturduğun bu son mesajı sunucudaki herkese kendin gönder.
-            // Bu, asenkron bir olay içinde olduğumuz için sunucuyu yavaşlatmaz.
-            Bukkit.broadcast(formattedMessage);
+            // 4. Oluşturduğun bu son mesajı ana thread'de sunucudaki herkese gönder.
+            Bukkit.getScheduler().runTask(plugin, () -> Bukkit.broadcast(formattedMessage));
         });
     }
 }
