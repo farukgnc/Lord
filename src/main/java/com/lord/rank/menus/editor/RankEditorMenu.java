@@ -1,15 +1,17 @@
 package com.lord.rank.menus.editor;
 
+import com.lord.Lord;
 import com.lord.chat.ChatService;
 import com.lord.menu.ConfirmationMenu;
 import com.lord.menu.MenuView;
 import com.lord.menu.components.UIComponent;
 import com.lord.menu.utils.ButtonBuilder;
 import com.lord.rank.Rank;
-import com.lord.rank.repositories.RankRepository;
+import com.lord.rank.RankService;
 import com.lord.service.ServiceRegistry;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
@@ -20,13 +22,15 @@ public final class RankEditorMenu extends MenuView {
 
     private final Rank rank;
     private final ServiceRegistry registry;
-    private final RankRepository rankRepository;
+    private final Lord plugin;
+    private final RankService rankService;
 
     public RankEditorMenu(Rank rank, ServiceRegistry registry) {
         super("Editing Rank: " + rank.getName(), 5);
         this.rank = rank;
         this.registry = registry;
-        this.rankRepository = registry.get(RankRepository.class);
+        this.plugin = registry.get(Lord.class);
+        this.rankService = registry.get(RankService.class);
     }
 
     @Override
@@ -73,9 +77,12 @@ public final class RankEditorMenu extends MenuView {
                         try {
                             int newPriority = Integer.parseInt(input);
                             this.rank.setPriority(newPriority);
-                            this.rankRepository.save(this.rank);
-                            viewer.sendMessage(Component.text("Priority updated successfully!", NamedTextColor.GREEN));
-                            this.getMenuManager().open(viewer, new RankEditorMenu(this.rank, this.registry));
+                            this.rankService.saveRank(this.rank, viewer).whenComplete((success, throwable) -> Bukkit.getScheduler().runTask(plugin, () -> {
+                                if (throwable == null && Boolean.TRUE.equals(success)) {
+                                    viewer.sendMessage(Component.text("Priority updated successfully!", NamedTextColor.GREEN));
+                                }
+                                this.getMenuManager().open(viewer, new RankEditorMenu(this.rank, this.registry));
+                            }));
                         } catch (NumberFormatException e) {
                             viewer.sendMessage(Component.text("Invalid number. Please try again.", NamedTextColor.RED));
                             this.getMenuManager().open(viewer, new RankEditorMenu(this.rank, this.registry));
@@ -90,9 +97,12 @@ public final class RankEditorMenu extends MenuView {
                 .lore("<gray>Current: " + (this.rank.getPrefix() != null ? this.rank.getPrefix() : "<i>None"), "", "<yellow>Click to change the prefix.")
                 .onClick(event -> promptForText("prefix", (player, input) -> {
                     this.rank.setPrefix(input);
-                    this.rankRepository.save(this.rank);
-                    player.sendMessage(Component.text("Prefix updated successfully!", NamedTextColor.GREEN));
-                    this.getMenuManager().open(player, new RankEditorMenu(this.rank, this.registry));
+                    this.rankService.saveRank(this.rank, player).whenComplete((success, throwable) -> Bukkit.getScheduler().runTask(plugin, () -> {
+                        if (throwable == null && Boolean.TRUE.equals(success)) {
+                            player.sendMessage(Component.text("Prefix updated successfully!", NamedTextColor.GREEN));
+                        }
+                        this.getMenuManager().open(player, new RankEditorMenu(this.rank, this.registry));
+                    }));
                 })).build();
     }
 
@@ -102,9 +112,12 @@ public final class RankEditorMenu extends MenuView {
                 .lore("<gray>Current: " + (this.rank.getSuffix() != null ? this.rank.getSuffix() : "<i>None"), "", "<yellow>Click to change the suffix.")
                 .onClick(event -> promptForText("suffix", (player, input) -> {
                     this.rank.setSuffix(input);
-                    this.rankRepository.save(this.rank);
-                    player.sendMessage(Component.text("Suffix updated successfully!", NamedTextColor.GREEN));
-                    this.getMenuManager().open(player, new RankEditorMenu(this.rank, this.registry));
+                    this.rankService.saveRank(this.rank, player).whenComplete((success, throwable) -> Bukkit.getScheduler().runTask(plugin, () -> {
+                        if (throwable == null && Boolean.TRUE.equals(success)) {
+                            player.sendMessage(Component.text("Suffix updated successfully!", NamedTextColor.GREEN));
+                        }
+                        this.getMenuManager().open(player, new RankEditorMenu(this.rank, this.registry));
+                    }));
                 })).build();
     }
 
@@ -151,9 +164,14 @@ public final class RankEditorMenu extends MenuView {
                             "Delete Rank: " + rank.getName(),
                             "Are you sure you want to permanently\ndelete this rank?",
                             onConfirm -> {
-                                this.rankRepository.delete(this.rank.getName());
-                                viewer.sendMessage(Component.text("Rank '" + this.rank.getName() + "' has been deleted.", NamedTextColor.GREEN));
-                                this.getMenuManager().open(viewer, new RankListMenu(this.registry));
+                                this.rankService.deleteRank(this.rank.getName(), viewer).whenComplete((success, throwable) -> Bukkit.getScheduler().runTask(plugin, () -> {
+                                    if (throwable == null && Boolean.TRUE.equals(success)) {
+                                        viewer.sendMessage(Component.text("Rank '" + this.rank.getName() + "' has been deleted.", NamedTextColor.GREEN));
+                                        this.getMenuManager().open(viewer, new RankListMenu(this.registry));
+                                    } else {
+                                        this.getMenuManager().open(viewer, new RankEditorMenu(this.rank, this.registry));
+                                    }
+                                }));
                             },
                             onCancel -> this.getMenuManager().open(viewer, new RankEditorMenu(this.rank, this.registry))
                     );

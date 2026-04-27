@@ -1,14 +1,17 @@
 package com.lord.rank.menus.editor;
 
+import com.lord.Lord;
 import com.lord.chat.ChatService;
 import com.lord.menu.AbstractPaginatedMenu;
 import com.lord.menu.components.UIComponent;
 import com.lord.menu.utils.ButtonBuilder;
 import com.lord.rank.Rank;
+import com.lord.rank.RankService;
 import com.lord.rank.repositories.RankRepository;
 import com.lord.service.ServiceRegistry;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
@@ -19,10 +22,14 @@ import java.util.Map;
 public final class PermissionEditorMenu extends AbstractPaginatedMenu<String> {
 
     private final Rank rank;
+    private final Lord plugin;
+    private final RankService rankService;
 
     public PermissionEditorMenu(Rank rank, ServiceRegistry registry) {
         super(registry, "Permissions for: " + rank.getName(), 6);
         this.rank = rank;
+        this.plugin = registry.get(Lord.class);
+        this.rankService = registry.get(RankService.class);
     }
 
     @Override
@@ -48,8 +55,8 @@ public final class PermissionEditorMenu extends AbstractPaginatedMenu<String> {
                 .onClick(event -> {
                     if (event.getClick().isRightClick()) {
                         this.rank.getPermissions().remove(permission);
-                        this.registry.get(RankRepository.class).save(this.rank);
-                        this.refresh(); // Menüyü anında yenile.
+                        this.rankService.saveRank(this.rank, (Player) event.getWhoClicked()).whenComplete((success, throwable) ->
+                                Bukkit.getScheduler().runTask(plugin, this::refresh));
                     }
                 })
                 .build();
@@ -73,9 +80,12 @@ public final class PermissionEditorMenu extends AbstractPaginatedMenu<String> {
 
                     chatService.prompt(viewer, input -> {
                         this.rank.getPermissions().add(input.toLowerCase());
-                        this.registry.get(RankRepository.class).save(this.rank);
-                        viewer.sendMessage(Component.text("Permission '" + input + "' added.", NamedTextColor.GREEN));
-                        this.getMenuManager().open(viewer, new PermissionEditorMenu(this.rank, this.registry));
+                        this.rankService.saveRank(this.rank, viewer).whenComplete((success, throwable) -> Bukkit.getScheduler().runTask(plugin, () -> {
+                            if (throwable == null && Boolean.TRUE.equals(success)) {
+                                viewer.sendMessage(Component.text("Permission '" + input + "' added.", NamedTextColor.GREEN));
+                            }
+                            this.getMenuManager().open(viewer, new PermissionEditorMenu(this.rank, this.registry));
+                        }));
                     });
                 })
                 .build();

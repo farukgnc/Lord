@@ -77,59 +77,62 @@ public class RankService {
             updater.sendMessage(Component.text("Rank '" + name + "' not found.", NamedTextColor.RED));
             return CompletableFuture.completedFuture(false);
         }
-        
+
         Rank rank = rankOpt.get();
         boolean changed = false;
-        
+
         if (priority != null && rank.getPriority() != priority) {
             rank.setPriority(priority);
             changed = true;
         }
-        
+
         if (prefix != null && !prefix.equals(rank.getPrefix())) {
             rank.setPrefix(prefix);
             changed = true;
         }
-        
+
         if (suffix != null && !suffix.equals(rank.getSuffix())) {
             rank.setSuffix(suffix);
             changed = true;
         }
-        
+
         if (parents != null && !parents.equals(rank.getParentRankNames())) {
             rank.getParentRankNames().clear();
             rank.getParentRankNames().addAll(parents);
             changed = true;
         }
-        
+
         if (!changed) {
             updater.sendMessage(Component.text("No changes made to rank '" + name + "'.", NamedTextColor.YELLOW));
             return CompletableFuture.completedFuture(false);
         }
-        
+
+        return saveRank(rank, updater);
+    }
+    
+    public CompletableFuture<Boolean> saveRank(Rank rank, CommandSender updater) {
         return rankRepository.save(rank).thenApply(saved -> {
             if (!saved) {
-                runOnMainThread(() -> updater.sendMessage(Component.text("Failed to save rank '" + name + "'.", NamedTextColor.RED)));
+                runOnMainThread(() -> updater.sendMessage(Component.text("Failed to save rank '" + rank.getName() + "'.", NamedTextColor.RED)));
                 return false;
             }
 
-            // Broadcast rank update to other servers via Redis
             if (rankSyncService != null) {
                 rankSyncService.broadcastRankUpdate(rank);
             }
 
             String updaterName = (updater instanceof Player) ? updater.getName() : "Console";
             Component message = MiniMessage.miniMessage().deserialize(
-                "<yellow><b>RANK UPDATED</b></yellow> <gray>»</gray> Rank <white><rank></white> was updated by <white><updater></white>.",
-                Placeholder.unparsed("rank", name),
-                Placeholder.unparsed("updater", updaterName)
+                    "<yellow><b>RANK UPDATED</b></yellow> <gray>»</gray> Rank <white><rank></white> was updated by <white><updater></white>.",
+                    Placeholder.unparsed("rank", rank.getName()),
+                    Placeholder.unparsed("updater", updaterName)
             );
 
             runOnMainThread(() -> Bukkit.broadcast(message));
             return true;
         });
     }
-    
+
     /**
      * Deletes a rank
      */

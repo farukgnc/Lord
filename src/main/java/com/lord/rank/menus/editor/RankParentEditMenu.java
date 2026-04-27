@@ -1,13 +1,16 @@
 package com.lord.rank.menus.editor;
 
+import com.lord.Lord;
 import com.lord.menu.MenuView;
 import com.lord.menu.components.UIComponent;
 import com.lord.menu.utils.ButtonBuilder;
 import com.lord.rank.Rank;
+import com.lord.rank.RankService;
 import com.lord.rank.repositories.RankRepository;
 import com.lord.service.ServiceRegistry;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
@@ -17,6 +20,8 @@ public final class RankParentEditMenu extends MenuView {
 
     private final Rank targetRank;
     private final ServiceRegistry registry;
+    private final Lord plugin;
+    private final RankService rankService;
     // Bu menü açıkken yapılan seçimleri geçici olarak saklamak için.
     private final Set<String> selectedParents;
 
@@ -24,6 +29,8 @@ public final class RankParentEditMenu extends MenuView {
         super("Manage Parents: " + targetRank.getName(), 6);
         this.targetRank = targetRank;
         this.registry = registry;
+        this.plugin = registry.get(Lord.class);
+        this.rankService = registry.get(RankService.class);
         // Menü açıldığında, rütbenin mevcut ebeveynleriyle geçici listeyi doldur.
         this.selectedParents = new HashSet<>(targetRank.getParentRankNames());
     }
@@ -47,16 +54,18 @@ public final class RankParentEditMenu extends MenuView {
                 .name("<green>Save & Go Back")
                 .lore("<gray>Saves the changes and returns to the editor.")
                 .onClick(event -> {
-                    RankRepository repo = this.registry.get(RankRepository.class);
                     // Değişiklikleri asıl Rank nesnesine uygula
                     this.targetRank.getParentRankNames().clear();
                     this.targetRank.getParentRankNames().addAll(this.selectedParents);
-                    repo.save(this.targetRank);
 
-                    player.sendMessage(Component.text("Parents for rank '" + targetRank.getName() + "' updated.", NamedTextColor.GREEN));
+                    this.rankService.saveRank(this.targetRank, player).whenComplete((success, throwable) -> Bukkit.getScheduler().runTask(plugin, () -> {
+                        if (throwable == null && Boolean.TRUE.equals(success)) {
+                            player.sendMessage(Component.text("Parents for rank '" + targetRank.getName() + "' updated.", NamedTextColor.GREEN));
+                        }
 
-                    // Düzenleme menüsüne geri dön
-                    this.getMenuManager().open(player, new RankEditorMenu(this.targetRank, this.registry));
+                        // Düzenleme menüsüne geri dön
+                        this.getMenuManager().open(player, new RankEditorMenu(this.targetRank, this.registry));
+                    }));
                 })
                 .build();
 
