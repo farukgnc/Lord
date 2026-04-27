@@ -16,6 +16,7 @@ import org.bukkit.entity.Player;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 public class RankService {
 
@@ -50,7 +51,14 @@ public class RankService {
         if (suffix != null) newRank.setSuffix(suffix);
         if (parents != null) newRank.getParentRankNames().addAll(parents);
 
-        this.rankRepository.save(newRank);
+        try {
+            boolean saved = this.rankRepository.save(newRank).join();
+            if (!saved) {
+                throw new IllegalStateException("Failed to save rank '" + name + "'.");
+            }
+        } catch (CompletionException e) {
+            throw new IllegalStateException("Failed to save rank '" + name + "'.", e);
+        }
         
         // Broadcast rank creation to other servers via Redis
         if (rankSyncService != null) {
@@ -99,21 +107,24 @@ public class RankService {
             return CompletableFuture.completedFuture(false);
         }
         
-        return CompletableFuture.supplyAsync(() -> {
-            rankRepository.save(rank);
-            
+        return rankRepository.save(rank).thenApply(saved -> {
+            if (!saved) {
+                runOnMainThread(() -> updater.sendMessage(Component.text("Failed to save rank '" + name + "'.", NamedTextColor.RED)));
+                return false;
+            }
+
             // Broadcast rank update to other servers via Redis
             if (rankSyncService != null) {
                 rankSyncService.broadcastRankUpdate(rank);
             }
-            
+
             String updaterName = (updater instanceof Player) ? updater.getName() : "Console";
             Component message = MiniMessage.miniMessage().deserialize(
                 "<yellow><b>RANK UPDATED</b></yellow> <gray>»</gray> Rank <white><rank></white> was updated by <white><updater></white>.",
                 Placeholder.unparsed("rank", name),
                 Placeholder.unparsed("updater", updaterName)
             );
-            
+
             runOnMainThread(() -> Bukkit.broadcast(message));
             return true;
         });
@@ -130,22 +141,25 @@ public class RankService {
         }
         
         return rankRepository.delete(name).thenApply(success -> {
-            if (success) {
-                // Broadcast rank deletion to other servers via Redis
-                if (rankSyncService != null) {
-                    rankSyncService.broadcastRankDelete(name);
-                }
-                
-                String deleterName = (deleter instanceof Player) ? deleter.getName() : "Console";
-                Component message = MiniMessage.miniMessage().deserialize(
-                    "<red><b>RANK DELETED</b></red> <gray>»</gray> Rank <white><rank></white> was deleted by <white><deleter></white>.",
-                    Placeholder.unparsed("rank", name),
-                    Placeholder.unparsed("deleter", deleterName)
-                );
-                
-                runOnMainThread(() -> Bukkit.broadcast(message));
+            if (!success) {
+                runOnMainThread(() -> deleter.sendMessage(Component.text("Failed to delete rank '" + name + "'.", NamedTextColor.RED)));
+                return false;
             }
-            return success;
+
+            // Broadcast rank deletion to other servers via Redis
+            if (rankSyncService != null) {
+                rankSyncService.broadcastRankDelete(name);
+            }
+
+            String deleterName = (deleter instanceof Player) ? deleter.getName() : "Console";
+            Component message = MiniMessage.miniMessage().deserialize(
+                "<red><b>RANK DELETED</b></red> <gray>»</gray> Rank <white><rank></white> was deleted by <white><deleter></white>.",
+                Placeholder.unparsed("rank", name),
+                Placeholder.unparsed("deleter", deleterName)
+            );
+
+            runOnMainThread(() -> Bukkit.broadcast(message));
+            return true;
         });
     }
     

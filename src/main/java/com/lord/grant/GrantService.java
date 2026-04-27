@@ -51,7 +51,11 @@ public class GrantService {
         UUID issuerUuid = (issuer instanceof Player p) ? p.getUniqueId() : null;
         Grant newGrant = new Grant(targetUuid, rankName, issuerUuid, duration);
 
-        return grantRepository.save(newGrant).thenApply(success -> {
+        return grantRepository.save(newGrant).thenCompose(success -> {
+            if (!success) {
+                return CompletableFuture.failedFuture(new IllegalStateException("Failed to save grant for " + targetName + "."));
+            }
+
             // Invalidate the grant cache for this player
             grantCacheService.invalidate(targetUuid);
 
@@ -62,8 +66,7 @@ public class GrantService {
             }
 
             // Refresh player data to apply the new grant immediately
-            playerDataCache.refreshPlayerData(targetUuid).thenRun(() -> {
-                // Send success message
+            return playerDataCache.refreshPlayerData(targetUuid).thenApply(ignored -> {
                 String issuerName = (issuer instanceof Player) ? issuer.getName() : "Console";
                 String durationStr = duration.isZero() ? "permanently" : "for " + TimeUtil.formatDuration(duration);
 
@@ -75,9 +78,8 @@ public class GrantService {
                         Placeholder.unparsed("issuer", issuerName));
 
                 runOnMainThread(() -> Bukkit.broadcast(message));
+                return newGrant;
             });
-
-            return newGrant;
         });
     }
 

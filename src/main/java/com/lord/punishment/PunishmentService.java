@@ -64,16 +64,22 @@ public class PunishmentService {
             Punishment punishment = new Punishment(type, targetUuid, reason,
                     (issuer instanceof Player p) ? p.getUniqueId() : null, duration);
 
-            this.punishmentRepository.save(punishment).thenRun(() -> {
-                this.punishmentCacheService.invalidate(targetUuid);
+            this.punishmentRepository.save(punishment)
+                    .thenRun(() -> {
+                        this.punishmentCacheService.invalidate(targetUuid);
 
-                // Broadcast punishment creation to other servers via Redis
-                if (punishmentSyncService != null) {
-                    punishmentSyncService.broadcastPunishmentCreate(punishment, targetName, issuer.getName());
-                }
-            });
+                        // Broadcast punishment creation to other servers via Redis
+                        if (punishmentSyncService != null) {
+                            punishmentSyncService.broadcastPunishmentCreate(punishment, targetName, issuer.getName());
+                        }
 
-            runOnMainThread(() -> performPunishmentActions(punishment, targetName, issuer.getName()));
+                        performPunishmentActions(punishment, targetName, issuer.getName());
+                    })
+                    .exceptionally(throwable -> {
+                        runOnMainThread(() -> issuer.sendMessage(Component.text(
+                                "Failed to save punishment for " + targetName + ".", NamedTextColor.RED)));
+                        return null;
+                    });
         });
     }
 
@@ -92,34 +98,42 @@ public class PunishmentService {
 
                     UUID pardonerUuid = (pardoner instanceof Player p) ? p.getUniqueId() : null;
 
-                    for (Punishment punishmentToPardon : activePunishments) {
+                    CompletableFuture<?>[] saveFutures = activePunishments.stream().map(punishmentToPardon -> {
                         punishmentToPardon.setPardoned(true);
                         punishmentToPardon.setPardonerUuid(pardonerUuid);
                         punishmentToPardon.setPardonTime(Instant.now());
 
-                        // Save updated punishment to database
-                        this.punishmentRepository.save(punishmentToPardon);
+                        return this.punishmentRepository.save(punishmentToPardon)
+                                .thenRun(() -> {
+                                    // Broadcast punishment update to other servers via Redis
+                                    if (punishmentSyncService != null) {
+                                        String pardonerName = (pardoner instanceof Player) ? pardoner.getName() : "Console";
+                                        punishmentSyncService.broadcastPunishmentUpdate(punishmentToPardon, targetName,
+                                                pardonerName);
+                                    }
+                                });
+                    }).toArray(CompletableFuture[]::new);
 
-                        // Broadcast punishment update to other servers via Redis
-                        if (punishmentSyncService != null) {
-                            String pardonerName = (pardoner instanceof Player) ? pardoner.getName() : "Console";
-                            punishmentSyncService.broadcastPunishmentUpdate(punishmentToPardon, targetName,
-                                    pardonerName);
-                        }
-                    }
+                    CompletableFuture.allOf(saveFutures)
+                            .thenRun(() -> {
+                                this.punishmentCacheService.invalidate(targetUuid);
 
-                    this.punishmentCacheService.invalidate(targetUuid);
-
-                    runOnMainThread(() -> {
-                        String pardonerName = (pardoner instanceof Player) ? pardoner.getName() : "Console";
-                        String verb = "un" + type.getPastTense();
-                        Component broadcastMessage = MiniMessage.miniMessage().deserialize(
-                                "<green><b>PARDON</b></green> <gray>»</gray> <white><target></white> was <verb> by <white><pardoner></white>.",
-                                Placeholder.unparsed("target", targetName),
-                                Placeholder.unparsed("verb", verb),
-                                Placeholder.unparsed("pardoner", pardonerName));
-                        Bukkit.broadcast(broadcastMessage);
-                    });
+                                runOnMainThread(() -> {
+                                    String pardonerName = (pardoner instanceof Player) ? pardoner.getName() : "Console";
+                                    String verb = "un" + type.getPastTense();
+                                    Component broadcastMessage = MiniMessage.miniMessage().deserialize(
+                                            "<green><b>PARDON</b></green> <gray>»</gray> <white><target></white> was <verb> by <white><pardoner></white>.",
+                                            Placeholder.unparsed("target", targetName),
+                                            Placeholder.unparsed("verb", verb),
+                                            Placeholder.unparsed("pardoner", pardonerName));
+                                    Bukkit.broadcast(broadcastMessage);
+                                });
+                            })
+                            .exceptionally(throwable -> {
+                                runOnMainThread(() -> pardoner.sendMessage(Component.text(
+                                        "Failed to update punishments for " + targetName + ".", NamedTextColor.RED)));
+                                return null;
+                            });
                 });
     }
 
