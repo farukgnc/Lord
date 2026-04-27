@@ -1,8 +1,9 @@
 package com.lord.factory;
 
-import com.lord.database.Mongo;
+import com.lord.grant.GrantCacheService;
 import com.lord.grant.repositories.GrantRepository;
 import com.lord.grant.repositories.impl.InMemoryGrantRepository;
+import com.lord.punishment.PunishmentCacheService;
 import com.lord.punishment.repositories.PunishmentRepository;
 import com.lord.punishment.repositories.impl.InMemoryPunishmentRepository;
 import com.lord.rank.repositories.RankRepository;
@@ -13,7 +14,6 @@ import java.util.concurrent.CompletableFuture;
 
 public class InMemoryRepositoryFactory implements RepositoryFactory {
 
-    private Mongo mongo;
     private final ServiceRegistry registry;
 
     public InMemoryRepositoryFactory(ServiceRegistry registry) {
@@ -33,7 +33,10 @@ public class InMemoryRepositoryFactory implements RepositoryFactory {
         registry.register(GrantRepository.class, new InMemoryGrantRepository());
         registry.register(PunishmentRepository.class, new InMemoryPunishmentRepository());
 
-        return null;
+        registry.register(GrantCacheService.class, new GrantCacheService(registry));
+        registry.register(PunishmentCacheService.class, new PunishmentCacheService(registry));
+
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override

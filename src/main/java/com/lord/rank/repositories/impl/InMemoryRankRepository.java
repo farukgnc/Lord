@@ -26,7 +26,7 @@ public final class InMemoryRankRepository implements RankRepository {
 
     @Override
     public CompletableFuture<Set<Rank>> loadAllRanks() {
-        return null;
+        return CompletableFuture.completedFuture(getAllRanks());
     }
 
     @Override
