@@ -27,6 +27,26 @@ Lord is a Minecraft server core plugin that provides essential features for mana
 
 The plugin's configuration files can be found in the `plugins/Lord` directory. You can configure the database connection, messages, and other settings in these files.
 
+## Testing
+
+This project now includes a comprehensive JUnit 5 based test setup.
+
+### Run all tests
+
+```bash
+mvn test
+```
+
+### Generate coverage report (JaCoCo)
+
+```bash
+mvn test
+```
+
+Coverage report output:
+
+- `target/site/jacoco/index.html`
+
 ## Contributing
 
 Contributions are welcome! If you would like to contribute to the project, please follow these steps:
